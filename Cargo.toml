@@ -4,3 +4,31 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+drogue-bazaar-core = { version = "0.1", path = "drogue-bazaar-core", features = ["serde", "config", "std", "alloc"] }
+
+anyhow = { version = "1", optional = true }
+drogue-bazaar-application = { version = "0.1", optional = true, path = "drogue-bazaar-application" }
+drogue-bazaar-actix = { version = "0.1", optional = true, path = "drogue-bazaar-actix" }
+
+[features]
+default = ["app", "actix", "metrics", "tracing"]
+
+metrics = ["drogue-bazaar-actix/metrics"]
+tracing = ["drogue-bazaar-actix/tracing"]
+
+dotenv = ["drogue-bazaar-application/dotenv"]
+actix = ["drogue-bazaar-actix"]
+
+# appliction stack
+app = ["drogue-bazaar-application", "anyhow"]
+jaeger = ["drogue-bazaar-application/jaeger"]
+
+console-metrics = ["drogue-bazaar-application/console-metrics"]
+console-tracing = ["drogue-bazaar-application/console-tracing"]
+
+[dev-dependencies]
+serde = "1"
+
+[patch.crates-io]
+#actix-web = { git = "https://github.com/ctron/actix-web", rev = "54df80884e58353748474e4029dcef00b24cb314"} # FIXME: awaiting release 4.2.0
+#actix-http = { git = "https://github.com/ctron/actix-web", rev = "54df80884e58353748474e4029dcef00b24cb314"} # FIXME: awaiting release 4.2.0

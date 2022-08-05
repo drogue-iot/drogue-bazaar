@@ -1,0 +1,40 @@
+[package]
+name = "drogue-bazaar-application"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+config = "0.13"
+env_logger = "0.9"
+futures-core = "0.3"
+futures-util = "0.3"
+http = "0.2"
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = "1"
+
+tracing = "0.1"
+tracing-opentelemetry = "0.17"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+opentelemetry = { version = "0.17", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"], optional = true }
+
+drogue-bazaar-core = { version = "0.1", path = "../drogue-bazaar-core", features = ["config", "serde", "std"] }
+
+actix-web = { version = "4", optional = true }
+actix-web-prom = { version = "0.6", optional = true }
+
+prometheus = { version = "0.13", optional = true }
+dotenv = { version = "0.15", optional = true }
+
+[features]
+default = ["health"]
+health = ["prometheus", "actix-web", "actix-web-prom"]
+jaeger = ["opentelemetry-jaeger"]
+
+# show metrics periodically on the console
+console-metrics = ["prometheus", "tokio/time"]
+console-tracing = ["tracing/log"]

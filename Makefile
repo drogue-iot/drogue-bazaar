@@ -1,13 +1,16 @@
 .PHONY: all
 all: check test
 
+MODULES=. drogue-bazaar-core drogue-bazaar-application drogue-bazaar-actix
+ARGS ?=
+
 .PHONY: check
 check:
-	cargo check-all-features
+	for i in $(MODULES); do pushd $$i; cargo check-all-features $(ARGS); popd ; done
 
 .PHONY: test
 test:
-	cargo test-all-features
+	for i in $(MODULES); do pushd $$i; cargo test $(ARGS); popd ; done
 
 .PHONY: install
 install:

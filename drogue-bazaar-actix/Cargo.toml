@@ -1,0 +1,36 @@
+[package]
+name = "drogue-bazaar-actix"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+actix-http = "3"
+actix-web = "4"
+actix-service = "2"
+actix-cors = "0.6"
+serde = { version = "1", features = ["derive"] }
+tokio = "1"
+futures-core = "0.3"
+futures-util = "0.3"
+actix-web-extras = "0.1"
+drogue-bazaar-core = { version = "0.1", path = "../drogue-bazaar-core" }
+log = "0.4"
+
+actix-web-opentelemetry = { version = "0.12", optional = true }
+tracing-actix-web = { version = "0.6", features = ["opentelemetry_0_17"], optional = true }
+prometheus = { version = "0.13", optional = true }
+actix-web-prom = { version = "0.6", optional = true }
+openssl = { version = "0.10", optional = true }
+
+[features]
+default = ["metrics", "tracing", "openssl"]
+
+openssl = ["dep:openssl", "drogue-bazaar-core/std", "drogue-bazaar-core/serde", "actix-web/openssl"]
+
+metrics = ["prometheus", "actix-web-prom"]
+tracing = ["tracing-actix-web", "actix-web-opentelemetry"]
+
+[patch.crates-io]
+actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16"} # FIXME: awaiting release 4.2.0
+actix-http = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16"} # FIXME: awaiting release 4.2.0
