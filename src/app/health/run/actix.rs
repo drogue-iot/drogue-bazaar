@@ -1,7 +1,10 @@
 use super::{HealthChecker, HealthServerConfig};
 use crate::health::HealthChecked;
+use anyhow::anyhow;
+use futures_util::{future::err, TryFutureExt};
 use prometheus::Registry;
 use serde_json::json;
+use std::{future::Future, pin::Pin};
 
 /// A server, running health check endpoints.
 pub struct HealthServer {
@@ -57,7 +60,7 @@ impl HealthServer {
         }
     }
 
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send>> {
         use actix_web::web;
         use actix_web::web::Data;
         health_endpoint!(actix_web);
@@ -75,16 +78,22 @@ impl HealthServer {
                 .unwrap(),
         };
 
-        actix_web::HttpServer::new(move || {
+        let http = actix_web::HttpServer::new(move || {
             use actix_web::App;
 
             health_app!(checker, app_data).wrap(prometheus.clone())
-        })
-        .bind(self.config.bind_addr)?
-        .workers(self.config.workers)
-        .run()
-        .await?;
+        });
 
-        Ok(())
+        let http = match http.bind(self.config.bind_addr) {
+            Ok(http) => http,
+            Err(e) => return Box::pin(err(anyhow!(e))),
+        };
+
+        let task = http
+            .workers(self.config.workers)
+            .run()
+            .map_err(|err| anyhow!(err));
+
+        Box::pin(task)
     }
 }

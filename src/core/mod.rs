@@ -8,4 +8,4 @@ pub mod info;
 pub mod spawn;
 pub mod tls;
 
-pub use spawn::Spawner;
+pub use spawn::{Spawner, SpawnerExt};

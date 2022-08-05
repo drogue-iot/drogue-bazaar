@@ -1,13 +1,17 @@
+use crate::app::init;
+use crate::app::init::Tracing;
 use crate::core::config::ConfigFromEnv;
+use crate::core::info::ComponentInformation;
 use crate::{
     app::health::{HealthServer, HealthServerConfig},
     core::Spawner,
 };
 use futures_core::future::LocalBoxFuture;
-use futures_util::{future::FutureExt, stream::FuturesUnordered};
+use futures_util::future::FutureExt;
 use humantime::format_duration;
 use prometheus::{Encoder, TextEncoder};
 use std::future::Future;
+use std::io::Write;
 use std::pin::Pin;
 use std::time::Duration;
 
@@ -17,6 +21,8 @@ pub struct RuntimeConfig {
     pub console_metrics: ConsoleMetrics,
     #[serde(default)]
     pub health: HealthServerConfig,
+    #[serde(default)]
+    pub tracing: Tracing,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -46,11 +52,164 @@ mod default {
     }
 }
 
+pub struct Runtime {
+    component: ComponentInformation,
+    dotenv: Option<bool>,
+    show_banner: Option<bool>,
+}
+
+/// Create a new runtime, using the local crate a component.
+///
+/// ```
+/// use drogue_bazaar::{project, runtime, app::Main, core::Spawner};
+///
+/// project!(PROJECT: "Drogue IoT");
+///
+/// #[derive(serde::Deserialize)]
+/// struct Config {}
+///
+/// async fn run(config: Config, spawner: &mut dyn Spawner) -> anyhow::Result<()> {
+///     Ok(())
+/// }
+///
+/// fn main() {
+///     let runtime = runtime!(PROJECT)
+///         .exec(run);
+/// }
+/// ```
+#[macro_export]
+macro_rules! runtime {
+    ($project:expr) => {
+        $crate::app::Runtime::new($crate::component!($project))
+    };
+}
+
+impl Runtime {
+    pub fn new(component: ComponentInformation) -> Self {
+        Self {
+            component,
+            dotenv: None,
+            show_banner: None,
+        }
+    }
+
+    /// Force dotenv option.
+    ///
+    /// ```
+    /// use drogue_bazaar::{project, runtime};
+    ///
+    /// project!(PROJECT: "Drogue IoT");
+    ///
+    /// fn main() {
+    ///     runtime!(PROJECT)
+    ///         .dotenv(false);
+    /// }
+    /// ```
+    pub fn dotenv<I: Into<Option<bool>>>(mut self, dotenv: I) -> Self {
+        self.dotenv = dotenv.into();
+        self
+    }
+
+    /// Show the application banner
+    fn banner(&self) {
+        if self
+            .show_banner
+            .or_else(|| flag_opt("RUNTIME__SHOW_BANNER"))
+            .unwrap_or(true)
+        {
+            println!(
+                r#"{}  
+{} {} - {} {} ({})
+"#,
+                self.component.project.banner,
+                self.component.project.name,
+                self.component.project.version,
+                self.component.name,
+                self.component.version,
+                self.component.description
+            );
+
+            std::io::stdout().flush().ok();
+        }
+    }
+
+    pub async fn exec<C, A>(self, app: A) -> anyhow::Result<()>
+    where
+        A: App<C>,
+        for<'de> C: ConfigFromEnv<'de>,
+    {
+        // phase 1: early init, cannot really rely on env-vars, but may add its own
+
+        init::phase1(
+            self.dotenv
+                .unwrap_or_else(|| !flag("RUNTIME__DISABLE_DOTENV")),
+        );
+
+        // phase 2: Show early runtime information
+        self.banner();
+
+        // phase 3: env-vars are ready now, we can make use of them
+
+        let mut main = Main::from_env()?;
+
+        init::phase2(self.component.name, main.config.tracing.clone());
+
+        // phase 4: main app startup
+
+        let config = C::from_env()?;
+        app.run(config, &mut main).await?;
+        main.run().await?;
+
+        // done
+
+        Ok(())
+    }
+
+    pub async fn exec_fn<C, F>(self, f: F) -> anyhow::Result<()>
+    where
+        for<'de> C: ConfigFromEnv<'de> + Send + 'static,
+        F: for<'f> AppFn<C, &'f mut dyn Spawner>,
+    {
+        self.exec(f).await
+    }
+}
+
+pub trait AppFn<C, S>: FnOnce(C, S) -> <Self as AppFn<C, S>>::Fut {
+    type Fut: Future<Output = anyhow::Result<()>>;
+}
+
+impl<C, S, F, Fut> AppFn<C, S> for F
+where
+    F: FnOnce(C, S) -> Fut,
+    Fut: Future<Output = anyhow::Result<()>>,
+{
+    type Fut = Fut;
+}
+
+#[async_trait::async_trait(?Send)]
+pub trait App<C>
+where
+    for<'de> C: ConfigFromEnv<'de>,
+{
+    async fn run(self, config: C, spawner: &mut dyn Spawner) -> anyhow::Result<()>;
+}
+
+#[async_trait::async_trait(?Send)]
+impl<C, A> App<C> for A
+where
+    A: for<'f> AppFn<C, &'f mut dyn Spawner>,
+    C: for<'de> ConfigFromEnv<'de> + 'static,
+{
+    async fn run(self, config: C, spawner: &mut dyn Spawner) -> anyhow::Result<()> {
+        (self)(config, spawner).await
+    }
+}
+
 /// A main runner.
 pub struct Main<'m> {
     config: RuntimeConfig,
 
-    tasks: FuturesUnordered<LocalBoxFuture<'m, anyhow::Result<()>>>,
+    tasks: Vec<LocalBoxFuture<'m, anyhow::Result<()>>>,
 
     health_checks: Vec<Box<dyn crate::health::HealthChecked>>,
 }
@@ -119,7 +278,9 @@ impl<'m> Main<'m> {
                 Some(prometheus::default_registry().clone()),
             );
 
-            self.tasks.push(Box::pin(health.run()));
+            let task = health.run();
+
+            self.tasks.push(task.boxed());
         }
     }
 
@@ -143,14 +304,22 @@ impl<'m> Main<'m> {
                         tokio::time::sleep(period).await;
                     }
                 }
-                .boxed_local(),
+                .boxed(),
             );
         }
     }
 }
 
-impl<'m> Spawner<anyhow::Result<()>> for Main<'m> {
+impl<'m> Spawner for Main<'m> {
     fn spawn(&mut self, future: Pin<Box<dyn Future<Output = anyhow::Result<()>>>>) {
         self.tasks.push(future);
     }
+}
+
+fn flag(name: &str) -> bool {
+    flag_opt(name).unwrap_or_default()
+}
+
+fn flag_opt(name: &str) -> Option<bool> {
+    std::env::var(name).map(|v| v.to_lowercase() == "true").ok()
 }

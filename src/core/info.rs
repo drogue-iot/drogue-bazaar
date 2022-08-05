@@ -4,6 +4,8 @@ pub struct ProjectInformation {
     pub name: &'static str,
     /// Version
     pub version: &'static str,
+    /// Banner
+    pub banner: &'static str,
 }
 
 /// Component information. Intended as information over all your project's components.
@@ -30,11 +32,21 @@ macro_rules! project {
         $crate::project!(PROJECT: $name);
     };
     ($v:ident: $name:literal) => {
+        $crate::project!($v: $name => r#"______ ______  _____  _____  _   _  _____   _____         _____ 
+|  _  \| ___ \|  _  ||  __ \| | | ||  ___| |_   _|       |_   _|
+| | | || |_/ /| | | || |  \/| | | || |__     | |    ___    | |  
+| | | ||    / | | | || | __ | | | ||  __|    | |   / _ \   | |  
+| |/ / | |\ \ \ \_/ /| |_\ \| |_| || |___   _| |_ | (_) |  | |  
+|___/  \_| \_| \___/  \____/ \___/ \____/   \___/  \___/   \_/  
+"# );
+    };
+    ($v:ident: $name:expr => $banner:expr) => {
         pub const $v: $crate::core::info::ProjectInformation =
             $crate::core::info::ProjectInformation {
                 name: $name,
                 version: env!("CARGO_PKG_VERSION"),
-            };
+                banner: $banner,
+        };
     };
 }
 
@@ -45,15 +57,14 @@ macro_rules! project {
 #[macro_export]
 macro_rules! component {
     ($project:expr) => {
-        $crate::component!(COMPONENT, $project);
+        $crate::core::info::ComponentInformation {
+            project: &$project,
+            name: env!("CARGO_PKG_NAME"),
+            version: env!("CARGO_PKG_VERSION"),
+            description: env!("CARGO_PKG_DESCRIPTION"),
+        }
     };
     ($v:ident, $project:expr) => {
-        pub const $v: $crate::core::info::ComponentInformation =
-            $crate::core::info::ComponentInformation {
-                project: $project,
-                name: env!("CARGO_PKG_NAME"),
-                version: env!("CARGO_PKG_VERSION"),
-                description: env!("CARGO_PKG_DESCRIPTION"),
-            };
+        pub const $v: $crate::core::info::ComponentInformation = $crate::component!($project);
     };
 }

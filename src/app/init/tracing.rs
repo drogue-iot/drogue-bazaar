@@ -1,19 +1,16 @@
-#[cfg(feature = "jaeger")]
-fn enable_tracing() -> bool {
-    std::env::var("ENABLE_TRACING")
-        .ok()
-        .map(|s| s.eq_ignore_ascii_case("true"))
-        .unwrap_or_default()
+#[derive(Clone, Debug, Default, serde::Deserialize)]
+pub enum Tracing {
+    #[default]
+    Disabled,
+    Jaeger,
 }
 
 /// Try getting the sampling rate from the environment variables
-#[cfg(feature = "jaeger")]
 fn sampling_from_env() -> Option<f64> {
     std::env::var_os("OTEL_TRACES_SAMPLER_ARG")
         .and_then(|s| s.to_str().map(|s| s.parse::<f64>().ok()).unwrap())
 }
 
-#[cfg(feature = "jaeger")]
 fn sampler() -> opentelemetry::sdk::trace::Sampler {
     if let Some(p) = sampling_from_env() {
         opentelemetry::sdk::trace::Sampler::TraceIdRatioBased(p)
@@ -22,13 +19,18 @@ fn sampler() -> opentelemetry::sdk::trace::Sampler {
     }
 }
 
-#[cfg(feature = "jaeger")]
-pub fn init_tracing(name: &str) {
-    if !enable_tracing() {
-        init_no_tracing();
-        return;
+pub fn init_tracing(name: &str, tracing: Tracing) {
+    match tracing {
+        Tracing::Disabled => {
+            init_no_tracing();
+        }
+        Tracing::Jaeger => {
+            init_jaeger(name);
+        }
     }
+}
 
+pub fn init_jaeger(name: &str) {
     use tracing_subscriber::prelude::*;
 
     opentelemetry::global::set_text_map_propagator(
@@ -52,12 +54,6 @@ pub fn init_tracing(name: &str) {
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .with(tracing_opentelemetry::layer().with_tracer(tracer))
         .init();
-}
-
-#[cfg(not(feature = "jaeger"))]
-#[allow(unused)]
-pub fn init_tracing(_: &str) {
-    init_no_tracing()
 }
 
 fn init_no_tracing() {
