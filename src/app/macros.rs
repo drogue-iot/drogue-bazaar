@@ -27,7 +27,7 @@ macro_rules! app {
         $crate::app!(PROJECT, $f)
     };
     ($project:expr, $f:ident) => {
-        $crate::main!($project, $crate::macros::run_app($f)?)
+        $crate::main!($project, $crate::app::macros::run_app($f)?)
     };
 }
 

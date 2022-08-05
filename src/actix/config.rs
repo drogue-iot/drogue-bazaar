@@ -1,4 +1,4 @@
-use crate::defaults;
+use crate::actix::defaults;
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]

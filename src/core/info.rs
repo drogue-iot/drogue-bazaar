@@ -30,10 +30,11 @@ macro_rules! project {
         $crate::project!(PROJECT: $name);
     };
     ($v:ident: $name:literal) => {
-        pub const $v: $crate::info::ProjectInformation = $crate::info::ProjectInformation {
-            name: $name,
-            version: env!("CARGO_PKG_VERSION"),
-        };
+        pub const $v: $crate::core::info::ProjectInformation =
+            $crate::core::info::ProjectInformation {
+                name: $name,
+                version: env!("CARGO_PKG_VERSION"),
+            };
     };
 }
 
@@ -47,11 +48,12 @@ macro_rules! component {
         $crate::component!(COMPONENT, $project);
     };
     ($v:ident, $project:expr) => {
-        pub const $v: $crate::info::ComponentInformation = $crate::info::ComponentInformation {
-            project: $project,
-            name: env!("CARGO_PKG_NAME"),
-            version: env!("CARGO_PKG_VERSION"),
-            description: env!("CARGO_PKG_DESCRIPTION"),
-        };
+        pub const $v: $crate::core::info::ComponentInformation =
+            $crate::core::info::ComponentInformation {
+                project: $project,
+                name: env!("CARGO_PKG_NAME"),
+                version: env!("CARGO_PKG_VERSION"),
+                description: env!("CARGO_PKG_DESCRIPTION"),
+            };
     };
 }

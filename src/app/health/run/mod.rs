@@ -1,20 +1,19 @@
-#[cfg(feature = "actix-web")]
 mod actix;
 
-#[cfg(feature = "actix-web")]
 pub use actix::HealthServer;
 
+use crate::health::{HealthCheckError, HealthChecked};
 use futures_util::stream::StreamExt;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::future::Future;
 use std::sync::Arc;
-
-use crate::health::{HealthCheckError, HealthChecked};
 use tracing::instrument;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct HealthServerConfig {
+    #[serde(default)]
+    pub enabled: bool,
     #[serde(default = "defaults::bind_addr")]
     pub bind_addr: String,
     #[serde(default = "defaults::workers")]
@@ -24,7 +23,7 @@ pub struct HealthServerConfig {
 mod defaults {
     #[inline]
     pub fn bind_addr() -> String {
-        "127.0.0.1:9090".into()
+        "[::1]:9090".into()
     }
 
     #[inline]
@@ -36,6 +35,7 @@ mod defaults {
 impl Default for HealthServerConfig {
     fn default() -> Self {
         Self {
+            enabled: false,
             bind_addr: defaults::bind_addr(),
             workers: defaults::workers(),
         }

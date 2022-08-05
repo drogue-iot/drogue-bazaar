@@ -1,7 +1,3 @@
-mod run;
-
-pub use run::{HealthServer, HealthServerConfig};
-
 use async_trait::async_trait;
 use core::fmt::{Display, Formatter};
 

@@ -69,7 +69,7 @@ impl TryFrom<&ClientConfig> for native_tls::TlsConnector {
 mod test {
 
     use super::*;
-    use crate::config::ConfigFromEnv;
+    use crate::core::config::ConfigFromEnv;
     use config::Environment;
     use std::collections::HashMap;
 

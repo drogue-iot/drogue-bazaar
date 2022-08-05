@@ -1,7 +1,7 @@
+use crate::core::tls::TlsMode;
 use actix_http::{Request, Response};
 use actix_service::{IntoServiceFactory, ServiceFactory};
 use actix_web::{body::MessageBody, dev::AppConfig, Error, HttpServer};
-use drogue_bazaar_core::tls::TlsMode;
 use std::{fmt, path::Path};
 use tokio::io;
 

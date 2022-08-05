@@ -1,4 +1,7 @@
-use crate::{bind::bind_http, config::HttpConfig};
+use crate::{
+    actix::{bind::bind_http, config::HttpConfig},
+    core::tls::{TlsMode, WithTlsMode},
+};
 use actix_cors::Cors;
 use actix_http::Extensions;
 use actix_web::{
@@ -7,7 +10,6 @@ use actix_web::{
     App, HttpServer,
 };
 use actix_web_extras::middleware::Condition;
-use drogue_bazaar_core::tls::{TlsMode, WithTlsMode};
 use futures_core::future::LocalBoxFuture;
 use futures_util::{FutureExt, TryFutureExt};
 use std::{any::Any, sync::Arc};
@@ -83,7 +85,6 @@ where
         let max_payload_size = self.config.max_payload_size;
         let max_json_payload_size = self.config.max_json_payload_size;
 
-        #[cfg(feature = "metrics")]
         let prometheus = actix_web_prom::PrometheusMetricsBuilder::new(
             self.config
                 .metrics_namespace
@@ -102,9 +103,7 @@ where
                 CorsBuilder::Custom(f) => Some(f()),
             };
 
-            #[cfg(feature = "tracing")]
             let app = App::new().wrap(actix_web_opentelemetry::RequestTracing::new());
-            #[cfg(feature = "metrics")]
             let app = app.wrap(prometheus.clone());
             let app = app
                 .wrap(Condition::from_option(cors))
