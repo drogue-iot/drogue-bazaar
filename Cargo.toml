@@ -42,5 +42,5 @@ opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }
 tracing-opentelemetry = "0.17"
 
 [patch.crates-io]
-actix-web = { git = "https://github.com/ctron/actix-web", rev = "54df80884e58353748474e4029dcef00b24cb314" } # FIXME: awaiting release 4.2.0
-actix-http = { git = "https://github.com/ctron/actix-web", rev = "54df80884e58353748474e4029dcef00b24cb314" } # FIXME: awaiting release 4.2.0
+actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
+actix-http = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
