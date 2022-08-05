@@ -2,6 +2,7 @@ use crate::app::init;
 use crate::app::init::Tracing;
 use crate::core::config::ConfigFromEnv;
 use crate::core::info::ComponentInformation;
+use crate::health::HealthChecked;
 use crate::{
     app::health::{HealthServer, HealthServerConfig},
     core::Spawner,
@@ -61,14 +62,14 @@ pub struct Runtime {
 /// Create a new runtime, using the local crate a component.
 ///
 /// ```
-/// use drogue_bazaar::{project, runtime, app::Main, core::Spawner};
+/// use drogue_bazaar::{project, runtime, app::{Main, Startup}};
 ///
 /// project!(PROJECT: "Drogue IoT");
 ///
 /// #[derive(serde::Deserialize)]
 /// struct Config {}
 ///
-/// async fn run(config: Config, spawner: &mut dyn Spawner) -> anyhow::Result<()> {
+/// async fn run(config: Config, startup: &mut dyn Startup) -> anyhow::Result<()> {
 ///     Ok(())
 /// }
 ///
@@ -168,7 +169,7 @@ impl Runtime {
     pub async fn exec_fn<C, F>(self, f: F) -> anyhow::Result<()>
     where
         for<'de> C: ConfigFromEnv<'de> + Send + 'static,
-        F: for<'f> AppFn<C, &'f mut dyn Spawner>,
+        F: for<'f> AppFn<C, &'f mut dyn Startup>,
     {
         self.exec(f).await
     }
@@ -191,17 +192,17 @@ pub trait App<C>
 where
     for<'de> C: ConfigFromEnv<'de>,
 {
-    async fn run(self, config: C, spawner: &mut dyn Spawner) -> anyhow::Result<()>;
+    async fn run(self, config: C, startup: &mut dyn Startup) -> anyhow::Result<()>;
 }
 
 #[async_trait::async_trait(?Send)]
 impl<C, A> App<C> for A
 where
-    A: for<'f> AppFn<C, &'f mut dyn Spawner>,
+    A: for<'f> AppFn<C, &'f mut dyn Startup>,
     C: for<'de> ConfigFromEnv<'de> + 'static,
 {
-    async fn run(self, config: C, spawner: &mut dyn Spawner) -> anyhow::Result<()> {
-        (self)(config, spawner).await
+    async fn run(self, config: C, startup: &mut dyn Startup) -> anyhow::Result<()> {
+        (self)(config, startup).await
     }
 }
 
@@ -211,7 +212,7 @@ pub struct Main<'m> {
 
     tasks: Vec<LocalBoxFuture<'m, anyhow::Result<()>>>,
 
-    health_checks: Vec<Box<dyn crate::health::HealthChecked>>,
+    health_checks: Vec<Box<dyn HealthChecked>>,
 }
 
 impl<'m> Extend<LocalBoxFuture<'m, Result<(), anyhow::Error>>> for Main<'m> {
@@ -311,10 +312,61 @@ impl<'m> Main<'m> {
 }
 
 impl<'m> Spawner for Main<'m> {
-    fn spawn(&mut self, future: Pin<Box<dyn Future<Output = anyhow::Result<()>>>>) {
+    fn spawn_boxed(&mut self, future: Pin<Box<dyn Future<Output = anyhow::Result<()>>>>) {
         self.tasks.push(future);
     }
 }
+
+/// Startup context.
+pub trait Startup: Spawner {
+    /// Add a health check.
+    fn check(&mut self, check: Box<dyn HealthChecked>);
+
+    /// Allow the application to check if the runtime wants to enable tracing.
+    ///
+    /// This can be used to e.g. add some tracing logger into the HTTP stack.
+    fn use_tracing(&self) -> bool;
+}
+
+impl<'m> Startup for Main<'m> {
+    fn check(&mut self, check: Box<dyn HealthChecked>) {
+        self.health_checks.push(check);
+    }
+
+    fn use_tracing(&self) -> bool {
+        self.config.tracing.is_enabled()
+    }
+}
+
+pub trait StartupExt: Startup {
+    /// Add several health checks at once.
+    fn check_iter<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = Box<dyn HealthChecked>>,
+    {
+        for i in iter {
+            self.check(i);
+        }
+    }
+
+    fn spawn_iter<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = Pin<Box<dyn Future<Output = anyhow::Result<()>>>>>,
+    {
+        for i in iter {
+            self.spawn_boxed(i);
+        }
+    }
+
+    fn spawn<F>(&mut self, f: F)
+    where
+        F: Future<Output = anyhow::Result<()>> + 'static,
+    {
+        self.spawn_boxed(Box::pin(f))
+    }
+}
+
+impl<S: ?Sized> StartupExt for S where S: Startup {}
 
 fn flag(name: &str) -> bool {
     flag_opt(name).unwrap_or_default()

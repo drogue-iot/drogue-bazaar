@@ -5,6 +5,13 @@ pub enum Tracing {
     Jaeger,
 }
 
+impl Tracing {
+    /// Check if tracing is enabled, or not.
+    pub fn is_enabled(&self) -> bool {
+        !matches!(self, Self::Disabled)
+    }
+}
+
 /// Try getting the sampling rate from the environment variables
 fn sampling_from_env() -> Option<f64> {
     std::env::var_os("OTEL_TRACES_SAMPLER_ARG")
