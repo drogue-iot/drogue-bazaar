@@ -326,6 +326,9 @@ pub trait Startup: Spawner {
     ///
     /// This can be used to e.g. add some tracing logger into the HTTP stack.
     fn use_tracing(&self) -> bool;
+
+    /// Access the runtime config.
+    fn runtime_config(&self) -> &RuntimeConfig;
 }
 
 impl<'m> Startup for Main<'m> {
@@ -335,6 +338,10 @@ impl<'m> Startup for Main<'m> {
 
     fn use_tracing(&self) -> bool {
         self.config.tracing.is_enabled()
+    }
+
+    fn runtime_config(&self) -> &RuntimeConfig {
+        &self.config
     }
 }
 
