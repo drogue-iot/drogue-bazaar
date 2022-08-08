@@ -8,7 +8,6 @@ repository = "https://github.com/drogue-iot/drogue-bazaar"
 homepage = "https://drogue.io"
 categories = ["rust-patterns"]
 keywords = ["Service", "Runtime", "Plumbing"]
-readme = "README.md"
 
 edition = "2021"
 
