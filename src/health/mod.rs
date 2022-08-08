@@ -1,35 +1,23 @@
 //! Tools for health checks.
 
 use async_trait::async_trait;
-use core::fmt::{Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum HealthCheckError {
-    Failed(Box<dyn std::error::Error>),
+    #[error("Health check failed: {0}")]
+    Failed(#[from] Box<dyn std::error::Error>),
+    #[error("Not OK: {0}")]
     NotOk(String),
 }
 
-impl std::error::Error for HealthCheckError {}
-
-impl Display for HealthCheckError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Failed(err) => write!(f, "Health check failed: {err}"),
-            Self::NotOk(reason) => write!(f, "Not OK: {reason}"),
-        }
-    }
-}
-
-impl<E> From<Box<E>> for HealthCheckError
-where
-    E: std::error::Error + 'static,
-{
-    fn from(err: Box<E>) -> Self {
-        Self::Failed(err)
-    }
-}
-
 impl HealthCheckError {
+    pub fn from<E>(err: E) -> Self
+    where
+        E: std::error::Error + 'static,
+    {
+        Self::Failed(Box::new(err))
+    }
+
     pub fn nok<T, S: Into<String>>(reason: S) -> Result<T, Self> {
         Err(Self::NotOk(reason.into()))
     }
