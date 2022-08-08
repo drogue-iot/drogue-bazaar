@@ -320,7 +320,7 @@ impl<'m> Spawner for Main<'m> {
 /// Startup context.
 pub trait Startup: Spawner {
     /// Add a health check.
-    fn check(&mut self, check: Box<dyn HealthChecked>);
+    fn check_boxed(&mut self, check: Box<dyn HealthChecked>);
 
     /// Allow the application to check if the runtime wants to enable tracing.
     ///
@@ -332,7 +332,7 @@ pub trait Startup: Spawner {
 }
 
 impl<'m> Startup for Main<'m> {
-    fn check(&mut self, check: Box<dyn HealthChecked>) {
+    fn check_boxed(&mut self, check: Box<dyn HealthChecked>) {
         self.health_checks.push(check);
     }
 
@@ -352,8 +352,15 @@ pub trait StartupExt: Startup {
         I: IntoIterator<Item = Box<dyn HealthChecked>>,
     {
         for i in iter {
-            self.check(i);
+            self.check_boxed(i);
         }
+    }
+
+    fn check<C>(&mut self, c: C)
+    where
+        C: HealthChecked + 'static,
+    {
+        self.check_boxed(Box::new(c))
     }
 
     fn spawn_iter<I>(&mut self, iter: I)
