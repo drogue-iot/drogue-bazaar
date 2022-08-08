@@ -1,3 +1,5 @@
+//! Core functionality.
+
 /// Configuration support
 pub mod config;
 /// Working with [`Default`]
@@ -9,3 +11,5 @@ pub mod spawn;
 pub mod tls;
 
 pub use spawn::{Spawner, SpawnerExt};
+
+pub use drogue_bazaar_core::metrics;

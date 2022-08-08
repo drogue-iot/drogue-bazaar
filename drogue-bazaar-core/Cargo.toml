@@ -1,0 +1,16 @@
+[package]
+name = "drogue-bazaar-core"
+version = "0.2.0"
+authors = ["Jens Reimann <jreimann@redhat.com>"]
+license = "Apache-2.0"
+description = "A place to find tools for building your Rust application (Core)"
+repository = "https://github.com/drogue-iot/drogue-bazaar"
+homepage = "https://drogue.io"
+categories = ["rust-patterns"]
+keywords = ["Service", "Runtime", "Plumbing"]
+readme = "README.md"
+
+edition = "2021"
+
+[dependencies]
+

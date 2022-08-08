@@ -59,7 +59,7 @@ pub struct Runtime {
     show_banner: Option<bool>,
 }
 
-/// Create a new runtime, using the local crate a component.
+/// Create a new runtime, using the local crate as component.
 ///
 /// ```
 /// use drogue_bazaar::{project, runtime, app::{Main, Startup}};

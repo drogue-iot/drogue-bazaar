@@ -1,6 +1,7 @@
-use crate::actix::defaults;
+use super::defaults;
 use serde::Deserialize;
 
+/// HTTP server configuration.
 #[derive(Clone, Debug, Deserialize)]
 pub struct HttpConfig {
     #[serde(default = "defaults::bind_addr")]

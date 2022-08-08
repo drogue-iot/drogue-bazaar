@@ -1,8 +1,4 @@
-mod bind;
-mod config;
-mod defaults;
-mod start;
+//! Support functionality for Actix.
 
-pub use self::config::*;
-pub use bind::*;
-pub use start::*;
+pub mod auth;
+pub mod http;

@@ -3,7 +3,7 @@ use core::{future::Future, pin::Pin};
 /// A spawner, gathering spawned tasks during the setup phase.
 ///
 /// NOTE: The spawner itself might not execute/drive those tasks. It may be necessary to hand over
-/// gathered tasks to some method like [`run_main`].
+/// gathered tasks to some concept like [`crate::app::Main`].
 pub trait Spawner {
     fn spawn_boxed(&mut self, future: Pin<Box<dyn Future<Output = anyhow::Result<()>>>>);
 }

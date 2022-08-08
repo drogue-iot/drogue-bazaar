@@ -1,3 +1,5 @@
+//! Application stack tooling.
+
 /// Health checks
 pub mod health;
 /// Initializing your application stack.

@@ -25,7 +25,8 @@ pub struct ComponentInformation {
 /// This will define a new constant, including the name of the project as well as the version from
 /// the cargo file.
 ///
-/// It is intended to be present once in a central module of your project.
+/// It is intended to be present once in a central module of your project, possibly in combination
+/// with [`runtime!`].
 #[macro_export]
 macro_rules! project {
     ($name:literal) => {
@@ -52,8 +53,8 @@ macro_rules! project {
 
 /// Create a new component information constant.
 ///
-/// This will define a new constant, extracting the name of the component from the cargo file. It
-/// is intended to be directly used by the [`app!`] macro.
+/// This will define a new constant, extracting the name of the component from the cargo file. It is
+/// intended to be directly used by [`runtime!`].
 #[macro_export]
 macro_rules! component {
     ($project:expr) => {

@@ -1,6 +1,52 @@
+mod csv;
+
+pub use csv::*;
+
 use serde::Deserialize;
 use std::collections::HashMap;
 
+/// A default setup to extract configuration from environment variables.
+///
+/// The default setup uses `__` (double underscore) as a delimiter.
+///
+/// ```
+/// use drogue_bazaar::core::config::ConfigFromEnv;
+///
+/// #[derive(serde::Deserialize)]
+/// struct Config {
+///     sub: SubConfig,
+///     my_str: String,
+/// }
+///
+/// #[derive(serde::Deserialize)]
+/// struct SubConfig {
+///     my_str: String,
+///     #[serde(default)]
+///     my_bool: bool,
+///     #[serde(default)]
+///     my_opt_int: Option<u32>,
+/// }
+///
+/// fn run() -> anyhow::Result<()> {
+///     /*
+///     Assume the following env-vars are set:
+///         MY_STR = abc
+///         SUB__MY_STR = def
+///     */
+///     let config = Config::from_env()?;
+///
+///     /* The struct would be: {
+///         my_str: "abc",
+///         sub: {
+///             my_str: "def",
+///             my_bool: false,
+///             my_opt_int: None,
+///         }
+///     } */
+///
+///     Ok(())
+/// }
+/// ```
 pub trait ConfigFromEnv<'de>: Sized + Deserialize<'de> {
     fn from_env() -> Result<Self, config::ConfigError> {
         Self::from(config::Environment::default())

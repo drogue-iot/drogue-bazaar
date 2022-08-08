@@ -1,3 +1,5 @@
+//! TLS tooling.
+
 mod mode;
 
 pub use mode::*;
@@ -5,6 +7,7 @@ pub use mode::*;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+/// The default path to OpenShift's Service CA certificate.
 pub const SERVICE_CA_CERT: &str = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt";
 
 /// A client configuration.

@@ -10,5 +10,5 @@ pub fn max_json_payload_size() -> usize {
 
 #[inline]
 pub fn bind_addr() -> String {
-    "127.0.0.1:8080".into()
+    "[::1]:8080".into()
 }

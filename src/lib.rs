@@ -2,9 +2,12 @@
 
 pub mod actix;
 pub mod app;
+pub mod auth;
 pub mod core;
 pub mod health;
+pub mod reqwest;
 
+#[doc(hidden)]
 pub mod prelude {
     pub use crate::core::default::is_default;
 }

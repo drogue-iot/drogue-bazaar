@@ -1,5 +1,7 @@
+use super::{bind::bind_http, config::HttpConfig};
+use crate::app::{Startup, StartupExt};
 use crate::{
-    actix::{bind::bind_http, config::HttpConfig},
+    app::RuntimeConfig,
     core::tls::{TlsMode, WithTlsMode},
 };
 use actix_cors::Cors;
@@ -14,6 +16,7 @@ use futures_core::future::LocalBoxFuture;
 use futures_util::{FutureExt, TryFutureExt};
 use std::{any::Any, sync::Arc};
 
+/// Build a CORS setup.
 #[derive(Clone)]
 pub enum CorsBuilder {
     Disabled,
@@ -38,6 +41,7 @@ where
 
 pub type OnConnectFn = dyn Fn(&dyn Any, &mut Extensions) + Send + Sync + 'static;
 
+/// Build an HTTP server.
 pub struct HttpBuilder<F>
 where
     F: Fn(&mut ServiceConfig) + Send + Clone + 'static,
@@ -47,27 +51,32 @@ where
     cors_builder: CorsBuilder,
     on_connect: Option<Box<OnConnectFn>>,
     tls_mode: TlsMode,
+    tracing: bool,
 }
 
 impl<F> HttpBuilder<F>
 where
     F: Fn(&mut ServiceConfig) + Send + Clone + 'static,
 {
-    pub fn new(config: HttpConfig, app_builder: F) -> Self {
+    /// Start building a new HTTP server instance.
+    pub fn new(config: HttpConfig, runtime: Option<&RuntimeConfig>, app_builder: F) -> Self {
         Self {
             config,
             app_builder: Box::new(app_builder),
             cors_builder: Default::default(),
             on_connect: None,
             tls_mode: TlsMode::NoClient,
+            tracing: runtime.map(|r| r.tracing.is_enabled()).unwrap_or_default(),
         }
     }
 
+    /// Set the CORS builder.
     pub fn cors<I: Into<CorsBuilder>>(mut self, cors_builder: I) -> Self {
         self.cors_builder = cors_builder.into();
         self
     }
 
+    /// Set an "on connect" handler.
     pub fn on_connect<O>(mut self, on_connect: O) -> Self
     where
         O: Fn(&dyn Any, &mut Extensions) + Send + Sync + 'static,
@@ -76,20 +85,30 @@ where
         self
     }
 
+    /// Set the TLS mode.
     pub fn tls_mode<I: Into<TlsMode>>(mut self, tls_mode: I) -> Self {
         self.tls_mode = tls_mode.into();
         self
     }
 
+    /// Start the server on the provided startup context.
+    pub fn start(self, startup: &mut dyn Startup) -> anyhow::Result<()> {
+        startup.spawn(self.run()?);
+        Ok(())
+    }
+
+    /// Run the server.
+    ///
+    /// **NOTE:** This only returns a future, which was to be scheduled on some executor. Possibly
+    /// using [`crate::app::Startup`].
+    ///
+    /// In most cases you want to use [`Self::start`] instead.
     pub fn run(self) -> Result<LocalBoxFuture<'static, Result<(), anyhow::Error>>, anyhow::Error> {
         let max_payload_size = self.config.max_payload_size;
         let max_json_payload_size = self.config.max_json_payload_size;
 
         let prometheus = actix_web_prom::PrometheusMetricsBuilder::new(
-            self.config
-                .metrics_namespace
-                .as_deref()
-                .unwrap_or("drogue_cloud_http"),
+            self.config.metrics_namespace.as_deref().unwrap_or("drogue"),
         )
         .registry(prometheus::default_registry().clone())
         .build()
@@ -103,14 +122,32 @@ where
                 CorsBuilder::Custom(f) => Some(f()),
             };
 
-            let app = App::new().wrap(actix_web_opentelemetry::RequestTracing::new());
+            let (logger, tracing_logger) = match self.tracing {
+                false => (Some(middleware::Logger::default()), None),
+                true => (None, Some(tracing_actix_web::TracingLogger::default())),
+            };
+
+            let app = App::new();
+
+            // add wrapper (the last added is executed first)
+
+            // enable CORS support
+            let app = app.wrap(Condition::from_option(cors));
+
+            // record request metrics
             let app = app.wrap(prometheus.clone());
+
             let app = app
-                .wrap(Condition::from_option(cors))
-                .wrap(middleware::Logger::default())
+                .wrap(Condition::from_option(logger))
+                // logging: ... other tracing
+                .wrap(Condition::from_option(tracing_logger));
+
+            // configure payload and JSON payload limits
+            let app = app
                 .app_data(web::PayloadConfig::new(max_payload_size))
                 .app_data(web::JsonConfig::default().limit(max_json_payload_size));
 
+            // configure main http application
             app.configure(|cfg| (self.app_builder)(cfg))
         });
 
