@@ -49,15 +49,15 @@ tracing-opentelemetry = "0.17"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2"
 
-drogue-bazaar-core = { path = "./drogue-bazaar-core", version = "0.2" }
+drogue-bazaar-core = "0.2"
 native-tls = { version = "0.2", optional = true }
 
 [patch.crates-io]
 actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
 actix-http = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
-#drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "0cb6998da75905240f06f38a44aac31d7b3fdde5" } # FIXME: awaiting release 0.11.0
-drogue-client = { path = "../drogue-client" }
-drogue-bazaar-core = { path = "./drogue-bazaar-core" }
+drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "c6ade2e91754778db13175535a0aa8d6198f58fc" } # FIXME: awaiting release 0.11.0
+#drogue-client = { path = "../drogue-client" }
+#drogue-bazaar-core = { path = "./drogue-bazaar-core" }
 
 [features]
 default = ["default-tls"]
