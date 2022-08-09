@@ -43,3 +43,13 @@ pub trait Service {
         request: AuthenticationRequest,
     ) -> Result<AuthenticationResponse, AuthError>;
 }
+
+#[async_trait]
+impl Service for drogue_client::user::v1::Client {
+    async fn authenticate(&self, request: Request) -> Result<AuthenticationResponse, AuthError> {
+        Ok(self
+            .authenticate_access_token(request)
+            .await
+            .map_err(|err| AuthError::Internal(err.to_string()))?)
+    }
+}
