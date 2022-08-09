@@ -1,8 +1,8 @@
 mod middleware;
 
-use crate::{
-    actix::auth::AuthError,
-    auth::{openid, pat, UserInformation},
+use crate::auth::{
+    openid::{self, AuthError},
+    pat, UserInformation,
 };
 use ::openid::{Claims, CustomClaims};
 use chrono::{DateTime, TimeZone, Utc};

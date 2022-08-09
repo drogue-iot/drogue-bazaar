@@ -1,8 +1,5 @@
 use crate::{
-    app::{
-        health::{HealthChecker, HealthServer},
-        RuntimeConfig, Startup,
-    },
+    app::{health::HealthChecker, RuntimeConfig, Startup},
     core::{config::ConfigFromEnv, Spawner},
     health::HealthChecked,
 };
@@ -13,6 +10,9 @@ use prometheus::{Encoder, TextEncoder};
 use std::future::Future;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
+
+#[cfg(feature = "actix")]
+use crate::app::health::HealthServer;
 
 /// A main runner.
 ///
@@ -79,6 +79,7 @@ impl<'m> Main<'m> {
         self.sub.run().await
     }
 
+    #[cfg(feature = "actix")]
     fn run_health_server(&mut self) {
         if self.config.health.enabled {
             let health = HealthServer::new(
@@ -88,6 +89,13 @@ impl<'m> Main<'m> {
             );
 
             self.tasks.push(health.run().boxed());
+        }
+    }
+
+    #[cfg(not(feature = "actix"))]
+    fn run_health_server(&self) {
+        if self.config.health.enabled {
+            panic!("Unable to run health endpoint without 'actix' feature. Either enable 'actix' during compilation or disable the health server during runtime.");
         }
     }
 

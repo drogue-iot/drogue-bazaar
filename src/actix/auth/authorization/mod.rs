@@ -1,5 +1,4 @@
-use crate::actix::auth::AuthError;
-use crate::auth::{authz, UserInformation};
+use crate::auth::{authz, openid::AuthError, UserInformation};
 use drogue_client::user;
 use drogue_client::user::v1::authz::AuthorizationRequest;
 

@@ -1,6 +1,4 @@
-use crate::{
-    auth::openid::ExtendedClaims, core::config::CommaSeparatedVec, reqwest::ClientFactory,
-};
+use crate::{auth::openid::ExtendedClaims, core::config::CommaSeparatedVec};
 use anyhow::Context;
 use core::fmt::{Debug, Formatter};
 use futures_util::{stream, StreamExt, TryStreamExt};
@@ -268,7 +266,7 @@ pub trait ClientConfig {
 pub async fn create_client<C: ClientConfig, P: CompactJson + Claims>(
     config: &C,
 ) -> anyhow::Result<Client<Discovered, P>> {
-    let mut client = ClientFactory::new();
+    let mut client = crate::reqwest::ClientFactory::new();
 
     if config.tls_insecure() {
         client = client.make_insecure();

@@ -1,10 +1,10 @@
 //! Personal access tokens (pat)
 
-use crate::actix::auth::AuthError;
 use async_trait::async_trait;
 use drogue_client::user::v1::authn::{AuthenticationRequest, AuthenticationResponse};
 use std::sync::Arc;
 
+use crate::auth::openid::AuthError;
 pub use drogue_client::user::v1::authn::AuthenticationRequest as Request;
 pub use drogue_client::user::v1::authn::AuthenticationResponse as Response;
 pub use drogue_client::user::v1::authn::Outcome;

@@ -1,5 +1,7 @@
+#[cfg(feature = "actix")]
 mod actix;
 
+#[cfg(feature = "actix")]
 pub use actix::HealthServer;
 
 use crate::health::{HealthCheckError, HealthChecked};
@@ -107,6 +109,7 @@ impl Extend<Box<dyn HealthChecked>> for HealthChecker {
     }
 }
 
+#[allow(unused)]
 async fn run_checks<F, Fut>(checker: Arc<HealthChecker>, f: F) -> (http::StatusCode, Value)
 where
     F: FnOnce(Arc<HealthChecker>) -> Fut,

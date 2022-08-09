@@ -9,14 +9,6 @@ use std::{
     str::FromStr,
 };
 
-// ensure we have some form of TLS
-#[cfg(not(any(
-    feature = "default-tls",
-    feature = "native-tls",
-    feature = "rustls-tls"
-)))]
-compile_error!("Require at least one of: default-tls, native-tls, rustls-tls");
-
 /// Convert the name to an HTTP method.
 ///
 /// If the name is empty, [`None`] is returned. If the method is invalid, and error will be returned.
