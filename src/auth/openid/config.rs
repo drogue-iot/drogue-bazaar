@@ -13,11 +13,7 @@ pub struct TokenConfig {
 
     pub client_secret: String,
 
-    #[serde(default)]
-    pub issuer_url: Option<Url>,
-
-    #[serde(default)]
-    pub sso_url: Option<Url>,
+    pub issuer_url: Url,
 
     #[serde(default)]
     pub tls_insecure: bool,
@@ -25,34 +21,13 @@ pub struct TokenConfig {
     #[serde(default)]
     pub tls_ca_certificates: CommaSeparatedVec,
 
-    pub realm: String,
-
     #[serde(default)]
     #[serde(with = "humantime_serde")]
     pub refresh_before: Option<Duration>,
 }
 
 impl TokenConfig {
-    pub fn issuer_url(&self) -> anyhow::Result<Url> {
-        match (&self.issuer_url, &self.sso_url) {
-            (Some(issuer_url), _) => Ok(issuer_url.clone()),
-            (None, Some(sso_url)) => {
-                // keycloak
-                Ok(sso_url.join(&format!("realms/{realm}", realm = self.realm))?)
-            }
-            _ => {
-                anyhow::bail!(
-                    "Invalid token provider configuration, need either issuer or SSO url"
-                );
-            }
-        }
-    }
-}
-
-impl TokenConfig {
     pub async fn into_client(self, redirect: Option<String>) -> anyhow::Result<openid::Client> {
-        let issuer = self.issuer_url()?;
-
         let mut client = ClientFactory::new();
         client = client.add_ca_certs(self.tls_ca_certificates.0);
 
@@ -65,7 +40,7 @@ impl TokenConfig {
             self.client_id,
             self.client_secret,
             redirect,
-            issuer,
+            self.issuer_url,
         )
         .await
         .context("Discovering endpoint")
@@ -92,45 +67,6 @@ mod test {
     use std::collections::HashMap;
 
     #[test]
-    fn test_missing_urls() {
-        let config = TokenConfig {
-            client_id: "".to_string(),
-            client_secret: "".to_string(),
-            issuer_url: None,
-            sso_url: None,
-            realm: "".into(),
-            refresh_before: None,
-            tls_insecure: false,
-            tls_ca_certificates: vec![].into(),
-        };
-
-        let url = config.issuer_url();
-        assert!(url.is_err());
-    }
-
-    #[test]
-    fn test_issuer_url() {
-        let config = TokenConfig {
-            client_id: "".to_string(),
-            client_secret: "".to_string(),
-            issuer_url: None,
-            sso_url: Some(Url::parse("http://foo.bar/baz/buz").unwrap()),
-            realm: "drogue".to_string(),
-            refresh_before: None,
-            tls_insecure: false,
-            tls_ca_certificates: vec![].into(),
-        };
-
-        let url = config.issuer_url();
-        assert!(url.is_ok());
-        assert_eq!(
-            // sso URL doesn't end with a slash, which makes it drop the last path element
-            "http://foo.bar/baz/realms/drogue",
-            url.unwrap().to_string()
-        );
-    }
-
-    #[test]
     fn test_ca_certs() {
         let mut envs = HashMap::new();
 
@@ -146,9 +82,7 @@ mod test {
             TokenConfig {
                 client_id: "id".to_string(),
                 client_secret: "secret".to_string(),
-                issuer_url: None,
-                sso_url: Some(Url::parse("http://foo.bar/baz/buz").unwrap()),
-                realm: "drogue".to_string(),
+                issuer_url: Url::parse("http://foo.bar/baz/buz").unwrap(),
                 refresh_before: None,
                 tls_insecure: false,
                 tls_ca_certificates: vec!["/foo/bar/baz".to_string()].into(),
@@ -173,9 +107,7 @@ mod test {
             TokenConfig {
                 client_id: "id".to_string(),
                 client_secret: "secret".to_string(),
-                issuer_url: None,
-                sso_url: Some(Url::parse("http://foo.bar/baz/buz").unwrap()),
-                realm: "drogue".to_string(),
+                issuer_url: Url::parse("http://foo.bar/baz/buz").unwrap(),
                 refresh_before: None,
                 tls_insecure: false,
                 tls_ca_certificates: vec!["/foo/bar/baz".to_string(), "/foo/bar/baz2".to_string()]
