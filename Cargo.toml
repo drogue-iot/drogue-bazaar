@@ -58,7 +58,7 @@ tokio = { version = "1", features = ["time"], optional = true }
 [patch.crates-io]
 actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
 actix-http = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
-drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "c6ade2e91754778db13175535a0aa8d6198f58fc" } # FIXME: awaiting release 0.11.0
+drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "55135e532e4ddfdf88dfa50df73b751063740c71" } # FIXME: awaiting release 0.11.0
 #drogue-client = { path = "../drogue-client" }
 
 [features]
