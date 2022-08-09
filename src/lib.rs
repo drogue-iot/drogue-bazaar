@@ -9,6 +9,7 @@
     )
 ))]
 pub mod actix;
+#[cfg(feature = "app")]
 pub mod app;
 pub mod auth;
 pub mod core;
