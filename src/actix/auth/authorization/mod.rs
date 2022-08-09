@@ -1,6 +1,5 @@
-use crate::auth::{authz, openid::AuthError, UserInformation};
-use drogue_client::user;
-use drogue_client::user::v1::authz::AuthorizationRequest;
+use crate::auth::{authz, AuthError, UserInformation};
+use drogue_client::user::{self, v1::authz::AuthorizationRequest};
 
 mod middleware;
 

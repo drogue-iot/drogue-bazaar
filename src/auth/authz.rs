@@ -2,7 +2,7 @@
 
 use async_trait::async_trait;
 
-use crate::auth::openid::AuthError;
+use crate::auth::AuthError;
 pub use drogue_client::user::v1::authz::Outcome;
 
 #[async_trait]

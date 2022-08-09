@@ -1,9 +1,6 @@
 mod middleware;
 
-use crate::auth::{
-    openid::{self, AuthError},
-    pat, UserInformation,
-};
+use crate::auth::{openid, pat, AuthError, UserInformation};
 use ::openid::{Claims, CustomClaims};
 use chrono::{DateTime, TimeZone, Utc};
 pub use middleware::AuthenticatedUntil;

@@ -10,11 +10,6 @@
 ))]
 pub mod actix;
 pub mod app;
-#[cfg(any(
-    feature = "default-tls",
-    feature = "native-tls",
-    feature = "rustls-tls"
-))]
 pub mod auth;
 pub mod core;
 pub mod health;

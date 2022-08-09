@@ -2,12 +2,10 @@
 
 mod authenticator;
 mod config;
-mod error;
 mod validate;
 
 pub use self::config::*;
 pub use authenticator::*;
-pub use error::*;
 pub use openid::CustomClaims;
 
 use drogue_client::user::v1::UserDetails;

@@ -1,5 +1,5 @@
 use super::{AuthN, Credentials, UsernameAndToken};
-use crate::auth::openid::AuthError;
+use crate::auth::AuthError;
 use actix_http::body::EitherBody;
 use actix_service::{Service, Transform};
 use actix_web::{

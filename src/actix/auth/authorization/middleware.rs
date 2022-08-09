@@ -1,5 +1,5 @@
 use super::AuthZ;
-use crate::auth::{openid::AuthError, UserInformation};
+use crate::auth::{AuthError, UserInformation};
 use actix_service::{Service, Transform};
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse},

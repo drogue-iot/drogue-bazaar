@@ -18,7 +18,6 @@ async-trait = "0.1"
 chrono = "0.4"
 config = "0.13"
 dotenv = "0.15"
-thiserror = "1"
 drogue-client = "0.11"
 env_logger = "0.9"
 futures-core = "0.3"
@@ -35,15 +34,16 @@ prometheus = "0.13"
 reqwest = "0.11"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+thiserror = "1"
 tokio = { version = "1", features = ["time"] }
 tracing = "0.1"
-tracing-actix-web = { version = "0.6", features = ["opentelemetry_0_17"] }
 tracing-opentelemetry = "0.17"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2"
 
 native-tls = { version = "0.2", optional = true }
 
+# actix dependencies
 actix-cors = { version = "0.6", optional = true }
 actix-http = { version = "3", optional = true }
 actix-service = { version = "2", optional = true }
@@ -51,6 +51,7 @@ actix-web = { version = "4", optional = true }
 actix-web-extras = { version = "0.1", optional = true }
 actix-web-httpauth = { version = "0.8", optional = true }
 actix-web-prom = { version = "0.6", optional = true }
+tracing-actix-web = { version = "0.6", features = ["opentelemetry_0_17"], optional = true }
 
 [patch.crates-io]
 actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
@@ -61,7 +62,16 @@ drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "c6
 [features]
 default = ["default-tls", "actix"]
 
-actix = ["actix-cors", "actix-http", "actix-service", "actix-web", "actix-web-extras", "actix-web-httpauth", "actix-web-prom"]
+actix = [
+    "actix-cors",
+    "actix-http",
+    "actix-service",
+    "actix-web",
+    "actix-web-extras",
+    "actix-web-httpauth",
+    "actix-web-prom",
+    "tracing-actix-web"
+]
 
 default-tls = ["reqwest/default-tls"]
 native-tls = ["dep:native-tls", "reqwest/native-tls"]
