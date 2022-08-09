@@ -1,22 +1,16 @@
-use crate::app::init;
-use crate::app::init::Tracing;
-use crate::core::config::ConfigFromEnv;
-use crate::core::info::ComponentInformation;
-use crate::health::HealthChecked;
-use crate::{
-    app::health::{HealthServer, HealthServerConfig},
-    core::Spawner,
-};
-use futures_core::future::LocalBoxFuture;
-use futures_util::future::FutureExt;
-use humantime::format_duration;
-use prometheus::{Encoder, TextEncoder};
+mod main;
+
+pub use main::*;
+
+use crate::app::init::{self, Tracing};
+use crate::core::{config::ConfigFromEnv, info::ComponentInformation};
+use crate::{app::health::HealthServerConfig, core::Spawner, health::HealthChecked};
 use std::future::Future;
 use std::io::Write;
 use std::pin::Pin;
 use std::time::Duration;
 
-#[derive(Debug, Default, serde::Deserialize)]
+#[derive(Clone, Debug, Default, serde::Deserialize)]
 pub struct RuntimeConfig {
     #[serde(default)]
     pub console_metrics: ConsoleMetrics,
@@ -26,7 +20,7 @@ pub struct RuntimeConfig {
     pub tracing: Tracing,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 pub struct ConsoleMetrics {
     pub enabled: bool,
     #[serde(
@@ -106,6 +100,7 @@ impl Runtime {
     ///         .dotenv(false);
     /// }
     /// ```
+    #[allow(clippy::needless_doctest_main)]
     pub fn dotenv<I: Into<Option<bool>>>(mut self, dotenv: I) -> Self {
         self.dotenv = dotenv.into();
         self
@@ -153,7 +148,7 @@ impl Runtime {
 
         let mut main = Main::from_env()?;
 
-        init::phase2(self.component.name, main.config.tracing.clone());
+        init::phase2(self.component.name, main.runtime_config().tracing.clone());
 
         // phase 4: main app startup
 
@@ -206,115 +201,12 @@ where
     }
 }
 
-/// A main runner.
-pub struct Main<'m> {
-    config: RuntimeConfig,
-
-    tasks: Vec<LocalBoxFuture<'m, anyhow::Result<()>>>,
-
-    health_checks: Vec<Box<dyn HealthChecked>>,
+fn flag(name: &str) -> bool {
+    flag_opt(name).unwrap_or_default()
 }
 
-impl<'m> Extend<LocalBoxFuture<'m, Result<(), anyhow::Error>>> for Main<'m> {
-    fn extend<T: IntoIterator<Item = LocalBoxFuture<'m, anyhow::Result<()>>>>(&mut self, iter: T) {
-        self.tasks.extend(iter)
-    }
-}
-
-impl<'m> Default for Main<'m> {
-    fn default() -> Self {
-        Self::new(RuntimeConfig::default())
-    }
-}
-
-impl<'m> Main<'m> {
-    pub fn new(config: RuntimeConfig) -> Self {
-        Self {
-            config,
-
-            tasks: Default::default(),
-            health_checks: Vec::new(),
-        }
-    }
-
-    pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self::new(RuntimeConfig::from_env_prefix("RUNTIME__")?))
-    }
-
-    /// Add tasks to run.
-    pub fn add<I>(mut self, tasks: I) -> Self
-    where
-        I: IntoIterator<Item = LocalBoxFuture<'m, anyhow::Result<()>>>,
-    {
-        self.extend(tasks);
-        self
-    }
-
-    pub fn add_health<I>(&mut self, i: I)
-    where
-        I: IntoIterator<Item = Box<dyn crate::health::HealthChecked>>,
-    {
-        self.health_checks.extend(i);
-    }
-
-    pub async fn run(mut self) -> anyhow::Result<()> {
-        self.run_console_metrics();
-        self.run_health_server();
-
-        let (result, _, _) = futures_util::future::select_all(self.tasks).await;
-
-        log::warn!("One of the main runners returned: {result:?}");
-        log::warn!("Exiting application...");
-
-        Ok(())
-    }
-
-    fn run_health_server(&mut self) {
-        if self.config.health.enabled {
-            let checks = std::mem::take(&mut self.health_checks);
-
-            let health = HealthServer::new(
-                self.config.health.clone(),
-                checks,
-                Some(prometheus::default_registry().clone()),
-            );
-
-            let task = health.run();
-
-            self.tasks.push(task.boxed());
-        }
-    }
-
-    fn run_console_metrics(&mut self) {
-        if self.config.console_metrics.enabled {
-            let period = self.config.console_metrics.period;
-
-            self.tasks.push(
-                async move {
-                    log::info!(
-                        "Starting console metrics loop ({})...",
-                        format_duration(period)
-                    );
-                    let encoder = TextEncoder::new();
-                    loop {
-                        let metric_families = prometheus::gather();
-                        {
-                            let mut out = std::io::stdout().lock();
-                            encoder.encode(&metric_families, &mut out).unwrap();
-                        }
-                        tokio::time::sleep(period).await;
-                    }
-                }
-                .boxed(),
-            );
-        }
-    }
-}
-
-impl<'m> Spawner for Main<'m> {
-    fn spawn_boxed(&mut self, future: Pin<Box<dyn Future<Output = anyhow::Result<()>>>>) {
-        self.tasks.push(future);
-    }
+fn flag_opt(name: &str) -> Option<bool> {
+    std::env::var(name).map(|v| v.to_lowercase() == "true").ok()
 }
 
 /// Startup context.
@@ -329,20 +221,6 @@ pub trait Startup: Spawner {
 
     /// Access the runtime config.
     fn runtime_config(&self) -> &RuntimeConfig;
-}
-
-impl<'m> Startup for Main<'m> {
-    fn check_boxed(&mut self, check: Box<dyn HealthChecked>) {
-        self.health_checks.push(check);
-    }
-
-    fn use_tracing(&self) -> bool {
-        self.config.tracing.is_enabled()
-    }
-
-    fn runtime_config(&self) -> &RuntimeConfig {
-        &self.config
-    }
 }
 
 pub trait StartupExt: Startup {
@@ -381,11 +259,3 @@ pub trait StartupExt: Startup {
 }
 
 impl<S: ?Sized> StartupExt for S where S: Startup {}
-
-fn flag(name: &str) -> bool {
-    flag_opt(name).unwrap_or_default()
-}
-
-fn flag_opt(name: &str) -> Option<bool> {
-    std::env::var(name).map(|v| v.to_lowercase() == "true").ok()
-}

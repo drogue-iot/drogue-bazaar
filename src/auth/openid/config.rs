@@ -72,7 +72,7 @@ mod test {
 
         envs.insert("CLIENT_ID", "id");
         envs.insert("CLIENT_SECRET", "secret");
-        envs.insert("SSO_URL", "http://foo.bar/baz/buz");
+        envs.insert("ISSUER_URL", "http://foo.bar/baz/buz");
         envs.insert("REALM", "drogue");
         envs.insert("TLS_CA_CERTIFICATES", "/foo/bar/baz");
 
@@ -97,7 +97,7 @@ mod test {
 
         envs.insert("CLIENT_ID", "id");
         envs.insert("CLIENT_SECRET", "secret");
-        envs.insert("SSO_URL", "http://foo.bar/baz/buz");
+        envs.insert("ISSUER_URL", "http://foo.bar/baz/buz");
         envs.insert("REALM", "drogue");
         envs.insert("TLS_CA_CERTIFICATES", "/foo/bar/baz,/foo/bar/baz2");
 

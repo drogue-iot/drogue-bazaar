@@ -12,7 +12,7 @@ use actix_web::{
     App, HttpServer,
 };
 use actix_web_extras::middleware::Condition;
-use futures_core::future::LocalBoxFuture;
+use futures_core::future::BoxFuture;
 use futures_util::{FutureExt, TryFutureExt};
 use std::{any::Any, sync::Arc};
 
@@ -103,7 +103,7 @@ where
     /// using [`crate::app::Startup`].
     ///
     /// In most cases you want to use [`Self::start`] instead.
-    pub fn run(self) -> Result<LocalBoxFuture<'static, Result<(), anyhow::Error>>, anyhow::Error> {
+    pub fn run(self) -> Result<BoxFuture<'static, Result<(), anyhow::Error>>, anyhow::Error> {
         let max_payload_size = self.config.max_payload_size;
         let max_json_payload_size = self.config.max_json_payload_size;
 
@@ -167,6 +167,6 @@ where
             main = main.workers(workers)
         }
 
-        Ok(main.run().err_into().boxed_local())
+        Ok(main.run().err_into().boxed())
     }
 }

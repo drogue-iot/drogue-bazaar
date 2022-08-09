@@ -1,5 +1,4 @@
 use super::{HealthChecker, HealthServerConfig};
-use crate::health::HealthChecked;
 use anyhow::anyhow;
 use futures_util::{future::err, TryFutureExt};
 use prometheus::Registry;
@@ -50,12 +49,12 @@ macro_rules! health_app {
 impl HealthServer {
     pub fn new(
         config: HealthServerConfig,
-        checks: Vec<Box<dyn HealthChecked>>,
+        checker: HealthChecker,
         registry: Option<Registry>,
     ) -> Self {
         Self {
             config,
-            checker: HealthChecker { checks },
+            checker,
             registry,
         }
     }

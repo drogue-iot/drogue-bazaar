@@ -8,6 +8,8 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use std::future::Future;
 use std::sync::Arc;
+use tokio::runtime::Handle;
+use tokio::sync::RwLock;
 use tracing::instrument;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -43,14 +45,15 @@ impl Default for HealthServerConfig {
 }
 
 /// Internal handling of health checking.
+#[derive(Clone, Default)]
 pub struct HealthChecker {
-    checks: Vec<Box<dyn HealthChecked>>,
+    checks: Arc<RwLock<Vec<Box<dyn HealthChecked>>>>,
 }
 
 impl HealthChecker {
     #[instrument(level = "trace", skip(self), ret)]
     pub async fn is_ready(&self) -> Vec<Result<(), HealthCheckError>> {
-        futures_util::stream::iter(self.checks.iter())
+        futures_util::stream::iter(self.checks.read().await.iter())
             .then(|check| check.is_ready())
             .collect()
             .await
@@ -58,10 +61,49 @@ impl HealthChecker {
 
     #[instrument(level = "trace", skip(self), ret)]
     pub async fn is_alive(&self) -> Vec<Result<(), HealthCheckError>> {
-        futures_util::stream::iter(self.checks.iter())
+        futures_util::stream::iter(self.checks.read().await.iter())
             .then(|check| check.is_alive())
             .collect()
             .await
+    }
+
+    pub fn push<C>(&self, check: C)
+    where
+        C: Into<Box<dyn HealthChecked + 'static>>,
+    {
+        let check = check.into();
+        let checks = self.checks.clone();
+        Handle::current().spawn(async move {
+            checks.write().await.push(check);
+        });
+    }
+}
+
+impl<C> Extend<C> for HealthChecker
+where
+    C: HealthChecked + 'static,
+{
+    fn extend<T: IntoIterator<Item = C>>(&mut self, iter: T) {
+        // collect first, so that we can send/spawn it
+        let iter: Vec<_> = iter
+            .into_iter()
+            .map(|c| Box::new(c) as Box<dyn HealthChecked>)
+            .collect();
+        let checks = self.checks.clone();
+        Handle::current().spawn(async move {
+            checks.write().await.extend(iter);
+        });
+    }
+}
+
+impl Extend<Box<dyn HealthChecked>> for HealthChecker {
+    fn extend<T: IntoIterator<Item = Box<dyn HealthChecked + 'static>>>(&mut self, iter: T) {
+        // collect first, so that we can send/spawn it
+        let iter: Vec<_> = iter.into_iter().collect();
+        let checks = self.checks.clone();
+        Handle::current().spawn(async move {
+            checks.write().await.extend(iter);
+        });
     }
 }
 

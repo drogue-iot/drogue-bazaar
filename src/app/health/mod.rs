@@ -1,3 +1,3 @@
 mod run;
 
-pub use run::{HealthServer, HealthServerConfig};
+pub use run::{HealthChecker, HealthServer, HealthServerConfig};
