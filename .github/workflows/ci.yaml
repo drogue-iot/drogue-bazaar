@@ -43,7 +43,7 @@ jobs:
       matrix:
         toolchain:
           - stable
-          - 1.62.0 # msrv (minimum supported rust version)
+          - 1.61.0 # msrv (minimum supported rust version)
         target:
           - x86_64-unknown-linux-gnu
 
@@ -68,44 +68,14 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Install cargo-check-all
+      - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
-          command: install
-          args: cargo-all-features
-
-      - name: Run cargo check
-        run: |
-          make check ARGS="--target ${{ matrix.target }} ${{ matrix.args }}"
-
-  test:
-    # we run tests only on the stable version, with defaults enabled
-
-    runs-on: ubuntu-22.04
-
-    needs:
-      - check
-
-    steps:
-
-      - uses: actions/checkout@v3
-
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+          command: check
+          args: --target ${{ matrix.target }} ${{ matrix.features }}
 
       - name: Run cargo test
-        run: |
-          make test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --target ${{ matrix.target }} ${{ matrix.features }}

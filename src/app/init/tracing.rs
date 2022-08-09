@@ -1,8 +1,13 @@
-#[derive(Clone, Debug, Default, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 pub enum Tracing {
-    #[default]
     Disabled,
     Jaeger,
+}
+
+impl Default for Tracing {
+    fn default() -> Self {
+        Self::Disabled
+    }
 }
 
 impl Tracing {
