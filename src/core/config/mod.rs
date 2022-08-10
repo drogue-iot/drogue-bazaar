@@ -48,10 +48,13 @@ use std::collections::HashMap;
 /// }
 /// ```
 pub trait ConfigFromEnv<'de>: Sized + Deserialize<'de> {
+    /// Get a configuration from the env-vars.
     fn from_env() -> Result<Self, config::ConfigError> {
         Self::from(config::Environment::default())
     }
 
+    /// Get a configuration from the env-vars, prefixing all with the provided prefix **plus**
+    /// the separator.
     fn from_env_prefix<S: AsRef<str>>(prefix: S) -> Result<Self, config::ConfigError> {
         Self::from(config::Environment::with_prefix(prefix.as_ref()))
     }

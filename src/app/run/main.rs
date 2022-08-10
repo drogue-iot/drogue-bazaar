@@ -53,7 +53,7 @@ impl<'m> Main<'m> {
     }
 
     pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self::new(RuntimeConfig::from_env_prefix("RUNTIME__")?))
+        Ok(Self::new(RuntimeConfig::from_env_prefix("RUNTIME")?))
     }
 
     /// Add tasks to run.
