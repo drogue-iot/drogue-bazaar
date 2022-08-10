@@ -38,10 +38,28 @@ pub struct UsernameAndToken {
 /// * `enable_access_token` - Whether to allow access tokens for authentication.
 ///
 #[derive(Clone)]
-pub struct AuthN {
-    pub openid: Option<openid::Authenticator>,
-    pub token: Option<pat::Authenticator>,
-    pub enable_access_token: bool,
+pub enum AuthN {
+    /// Authentication is disabled, all requests will be using [`UserInformation::Anonymous`].
+    Disabled,
+    /// Authentication is enabled, using openid or API tokens.
+    ///
+    /// **NOTE:** If neither is provided, all requests will fail.
+    Enabled {
+        openid: Option<openid::Authenticator>,
+        token: Option<pat::Authenticator>,
+    },
+}
+
+/// Map a combination of openid and PAT authenticator
+impl From<(Option<openid::Authenticator>, Option<pat::Authenticator>)> for AuthN {
+    fn from(auth: (Option<openid::Authenticator>, Option<pat::Authenticator>)) -> Self {
+        let (openid, token) = auth;
+        if openid.is_none() {
+            AuthN::Disabled
+        } else {
+            AuthN::Enabled { openid, token }
+        }
+    }
 }
 
 impl AuthN {
@@ -49,10 +67,14 @@ impl AuthN {
         &self,
         credentials: Credentials,
     ) -> Result<(UserInformation, Option<DateTime<Utc>>), AuthError> {
-        if let (Some(openid), Some(token)) = (&self.openid, &self.token) {
-            match credentials {
+        match self {
+            Self::Disabled => {
+                // authentication disabled
+                Ok((UserInformation::Anonymous, None))
+            }
+            Self::Enabled { openid, token } => match credentials {
                 Credentials::AccessToken(creds) => {
-                    if self.enable_access_token {
+                    if let Some(token) = token {
                         if creds.access_token.is_none() {
                             log::debug!("Cannot authenticate : empty access token.");
                             return Err(AuthError::InvalidRequest(String::from(
@@ -82,21 +104,27 @@ impl AuthN {
                         ))
                     }
                 }
-                Credentials::OpenIDToken(token) => match openid.validate_token(&token).await {
-                    Ok(token) => Ok((
-                        UserInformation::Authenticated(token.clone().into()),
-                        Some(Utc.timestamp(token.standard_claims().exp(), 0)),
-                    )),
-                    Err(err) => {
-                        log::debug!("Authentication error: {err}");
-                        Err(AuthError::Forbidden)
+                Credentials::OpenIDToken(token) => {
+                    if let Some(openid) = openid {
+                        match openid.validate_token(&token).await {
+                            Ok(token) => Ok((
+                                UserInformation::Authenticated(token.clone().into()),
+                                Some(Utc.timestamp(token.standard_claims().exp(), 0)),
+                            )),
+                            Err(err) => {
+                                log::debug!("Authentication error: {err}");
+                                Err(AuthError::Forbidden)
+                            }
+                        }
+                    } else {
+                        log::debug!("Open ID authentication disabled");
+                        Err(AuthError::InvalidRequest(
+                            "Open ID authentication disabled".to_string(),
+                        ))
                     }
-                },
+                }
                 Credentials::Anonymous => Ok((UserInformation::Anonymous, None)),
-            }
-        } else {
-            // authentication disabled
-            Ok((UserInformation::Anonymous, None))
+            },
         }
     }
 }
