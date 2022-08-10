@@ -73,6 +73,9 @@ impl<'m> Main<'m> {
     }
 
     pub async fn run(mut self) -> anyhow::Result<()> {
+        log::info!("Starting main ...");
+        log::debug!("Runtime configuration: {:#?}", self.config);
+
         self.run_console_metrics();
         self.run_health_server();
 
@@ -81,6 +84,8 @@ impl<'m> Main<'m> {
 
     #[cfg(feature = "actix")]
     fn run_health_server(&mut self) {
+        log::info!("Health server: {}", self.config.health.enabled);
+
         if self.config.health.enabled {
             let health = HealthServer::new(
                 self.config.health.clone(),
@@ -94,6 +99,11 @@ impl<'m> Main<'m> {
 
     #[cfg(not(feature = "actix"))]
     fn run_health_server(&self) {
+        log::info!(
+            "No health server implementation (required?: {})",
+            self.config.health.enabled
+        );
+
         if self.config.health.enabled {
             panic!("Unable to run health endpoint without 'actix' feature. Either enable 'actix' during compilation or disable the health server during runtime.");
         }
@@ -182,6 +192,8 @@ impl SubMain<'_> {
     ///
     /// **NOTE:** This does not run any health checks, these must be run by the main instance.
     pub async fn run(self) -> anyhow::Result<()> {
+        log::info!("Running {} tasks in this main instance", self.tasks.len());
+
         let (result, _, _) = futures_util::future::select_all(self.tasks).await;
 
         log::warn!("One of the main runners returned: {result:?}");
