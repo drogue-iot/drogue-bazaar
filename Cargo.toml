@@ -37,6 +37,7 @@ tracing = "0.1"
 url = "2"
 
 native-tls = { version = "0.2", optional = true }
+openssl = { version = "0.10", optional = true }
 
 # actix dependencies
 actix-cors = { version = "0.6", optional = true }
@@ -62,7 +63,7 @@ drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "55
 #drogue-client = { path = "../drogue-client" }
 
 [features]
-default = ["default-tls", "actix", "app"]
+default = ["default-tls", "actix", "openssl", "app"]
 
 app = [
     "opentelemetry",
@@ -84,9 +85,10 @@ actix = [
     "tracing-actix-web"
 ]
 
-default-tls = ["reqwest/default-tls"]
+default-tls = ["reqwest/default-tls", "native-tls"]
 native-tls = ["dep:native-tls", "reqwest/native-tls"]
-rustls-tls = ["reqwest/rustls-tls"]
+rustls = ["reqwest/rustls-tls", "actix-web?/rustls"]
+openssl = ["dep:openssl", "actix-web?/openssl"]
 
 [package.metadata.cargo-all-features]
 skip_optional_dependencies = true
