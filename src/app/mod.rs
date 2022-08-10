@@ -7,4 +7,4 @@ pub mod init;
 /// Application run method support.
 pub mod run;
 
-pub use run::{Main, Runtime, RuntimeConfig, Startup, StartupExt};
+pub use run::{Main, Runtime, RuntimeConfig, Startup, StartupExt, SubMain, SubMainSeed};
