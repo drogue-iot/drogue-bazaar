@@ -37,7 +37,7 @@ pub struct UsernameAndToken {
 /// * `token` - An instance of [`pat::Authenticator`]. It's a client for drogue-cloud-user-auth-service. It is used to verify API keys.
 /// * `enable_access_token` - Whether to allow access tokens for authentication.
 ///
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum AuthN {
     /// Authentication is disabled, all requests will be using [`UserInformation::Anonymous`].
     Disabled,

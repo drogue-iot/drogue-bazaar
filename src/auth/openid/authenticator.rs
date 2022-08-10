@@ -124,6 +124,7 @@ pub struct Authenticator {
 }
 
 struct ClientsDebug<'a>(&'a [Client<Discovered, ExtendedClaims>]);
+
 impl<'a> Debug for ClientsDebug<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut d = f.debug_list();

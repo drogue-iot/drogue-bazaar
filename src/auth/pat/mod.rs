@@ -2,6 +2,7 @@
 
 use async_trait::async_trait;
 use drogue_client::user::v1::authn::{AuthenticationRequest, AuthenticationResponse};
+use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
 use crate::auth::AuthError;
@@ -12,6 +13,12 @@ pub use drogue_client::user::v1::authn::Outcome;
 #[derive(Clone)]
 pub struct Authenticator {
     service: Arc<dyn Service>,
+}
+
+impl Debug for Authenticator {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Authenticator").finish()
+    }
 }
 
 impl Authenticator {
