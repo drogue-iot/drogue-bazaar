@@ -18,7 +18,7 @@ async-trait = "0.1"
 chrono = "0.4"
 config = "0.13"
 dotenv = "0.15"
-drogue-client = "0.11"
+drogue-client = "0.11.0-alpha.1"
 env_logger = "0.9"
 futures-core = "0.3"
 futures-util = "0.3"
@@ -58,8 +58,8 @@ tokio = { version = "1", features = ["time"], optional = true }
 
 [patch.crates-io]
 actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
-actix-http = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
-drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "55135e532e4ddfdf88dfa50df73b751063740c71" } # FIXME: awaiting release 0.11.0
+#actix-http = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
+#drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "55135e532e4ddfdf88dfa50df73b751063740c71" } # FIXME: awaiting release 0.11.0
 #drogue-client = { path = "../drogue-client" }
 
 [features]
