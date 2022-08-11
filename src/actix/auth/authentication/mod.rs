@@ -4,6 +4,7 @@ use crate::auth::{openid, pat, AuthError, UserInformation};
 use ::openid::{Claims, CustomClaims};
 use chrono::{DateTime, TimeZone, Utc};
 pub use middleware::AuthenticatedUntil;
+use tracing::instrument;
 
 /// Credentials
 pub enum Credentials {
@@ -63,6 +64,7 @@ impl From<(Option<openid::Authenticator>, Option<pat::Authenticator>)> for AuthN
 }
 
 impl AuthN {
+    #[instrument(skip_all, err)]
     async fn authenticate(
         &self,
         credentials: Credentials,

@@ -3,6 +3,7 @@ use actix_web::dev::ServiceRequest;
 use async_trait::async_trait;
 use drogue_client::user::v1::authz::Outcome;
 use std::sync::Arc;
+use tracing::instrument;
 
 mod app;
 mod middleware;
@@ -29,6 +30,7 @@ impl AuthZ {
     }
 
     /// Authorise a request
+    #[instrument(skip_all, err)]
     pub async fn authorize(&self, context: Context<'_>) -> Result<(), AuthError> {
         match self.authorizer.authorize(&context).await {
             Ok(Some(Outcome::Allow)) => Ok(()),

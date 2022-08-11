@@ -147,7 +147,6 @@ impl Runtime {
         // phase 3: env-vars are ready now, we can make use of them
 
         let mut main = Main::from_env()?;
-
         init::phase2(self.component.name, main.runtime_config().tracing.clone());
 
         // phase 4: main app startup
@@ -155,6 +154,9 @@ impl Runtime {
         let config = C::from_env()?;
         app.run(config, &mut main).await?;
         main.run().await?;
+
+        // exiting, shutdown tracing (flush)
+        opentelemetry::global::shutdown_tracer_provider();
 
         // done
 

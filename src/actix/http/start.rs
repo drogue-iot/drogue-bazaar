@@ -116,27 +116,32 @@ where
         .map_err(|err| anyhow::anyhow!("Failed to build prometheus middleware: {err}"))?;
 
         let mut main = HttpServer::new(move || {
-            let cors = match self.cors_builder.clone() {
-                CorsBuilder::Disabled => None,
-                CorsBuilder::Permissive => Some(Cors::permissive()),
-                CorsBuilder::Custom(f) => Some(f()),
-            };
-
-            let (logger, tracing_logger) = match self.tracing {
-                false => (Some(middleware::Logger::default()), None),
-                true => (None, Some(tracing_actix_web::TracingLogger::default())),
-            };
-
             let app = App::new();
 
             // add wrapper (the last added is executed first)
 
             // enable CORS support
+            let cors = match self.cors_builder.clone() {
+                CorsBuilder::Disabled => None,
+                CorsBuilder::Permissive => Some(Cors::permissive()),
+                CorsBuilder::Custom(f) => Some(f()),
+            };
             let app = app.wrap(Condition::from_option(cors));
 
             // record request metrics
             let app = app.wrap(prometheus.clone());
 
+            // request logging
+            let (logger, tracing_logger) = match self.tracing {
+                false => (Some(middleware::Logger::default()), None),
+                true => (None, Some(tracing_actix_web::TracingLogger::default())),
+            };
+            log::debug!(
+                "Loggers ({}) - logger: {}, tracing: {}",
+                self.tracing,
+                logger.is_some(),
+                tracing_logger.is_some()
+            );
             let app = app
                 .wrap(Condition::from_option(logger))
                 // logging: ... other tracing

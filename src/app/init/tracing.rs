@@ -51,6 +51,7 @@ pub fn init_jaeger(name: &str) {
     );
     let pipeline = opentelemetry_jaeger::new_pipeline()
         .with_service_name(name)
+        .with_auto_split_batch(true)
         .with_trace_config(opentelemetry::sdk::trace::Config::default().with_sampler(
             opentelemetry::sdk::trace::Sampler::ParentBased(Box::new(sampler())),
         ));
