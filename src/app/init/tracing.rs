@@ -1,4 +1,5 @@
 #[derive(Clone, Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum Tracing {
     Disabled,
     Jaeger,
