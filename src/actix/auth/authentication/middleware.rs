@@ -76,9 +76,6 @@ where
             let basic_auth = req.extract::<BasicAuth>().await;
             let bearer_auth = req.extract::<BearerAuth>().await;
 
-            //let basic_auth = BasicAuth::from_service_request(&req).await;
-            //let bearer_auth = BearerAuth::from_service_request(&req).await;
-
             // This match a "token" or "api_key" query parameter
             let query_str = req.query_string();
             let token_query_param = Query::<Token>::from_query(query_str);
