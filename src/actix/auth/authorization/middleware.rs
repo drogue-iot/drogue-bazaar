@@ -1,5 +1,5 @@
-use super::AuthZ;
-use crate::auth::{AuthError, UserInformation};
+use super::{AuthZ, Context};
+use crate::auth::{UserInformation, ANONYMOUS};
 use actix_service::{Service, Transform};
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse},
@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 pub struct AuthMiddleware<S> {
     service: Rc<S>,
-    authenticator: AuthZ,
+    authorizer: AuthZ,
 }
 
 // 1. Middleware initialization
@@ -32,7 +32,7 @@ where
     fn new_transform(&self, service: S) -> Self::Future {
         ok(AuthMiddleware {
             service: Rc::new(service),
-            authenticator: self.clone(),
+            authorizer: self.clone(),
         })
     }
 }
@@ -52,32 +52,28 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let srv = Rc::clone(&self.service);
-        let auth = self.authenticator.clone();
-        let param = self.authenticator.app_param.clone();
+        let auth = self.authorizer.clone();
 
         Box::pin(async move {
-            // extract user information and application from the request
-            let user = req
-                .extensions()
-                .get::<UserInformation>()
-                .cloned()
-                .unwrap_or(UserInformation::Anonymous);
+            let result = {
+                // extract user information and application from the request
+                let ext = req.extensions();
+                let identity = ext.get::<UserInformation>().unwrap_or(&ANONYMOUS);
 
-            match req.match_info().get(param.as_str()) {
-                // authorize
-                Some(app) => match auth.authorize(app, user).await {
-                    Ok(_) => {
-                        // forward request to the next service
-                        srv.call(req).await
-                    }
-                    Err(e) => Err(e.into()),
-                },
+                let context = Context {
+                    identity: &identity,
+                    request: &req,
+                };
 
-                // Missing application parameter, cannot authorize
-                None => Err(AuthError::InvalidRequest(String::from(
-                    "Missing application parameter",
-                ))
-                .into()),
+                auth.authorize(context).await
+            };
+
+            match result {
+                Ok(()) => {
+                    // forward request to the next service
+                    srv.call(req).await
+                }
+                Err(e) => Err(e.into()),
             }
         })
     }

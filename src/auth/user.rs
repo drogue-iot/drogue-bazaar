@@ -9,6 +9,7 @@ pub enum UserInformation {
     Anonymous,
 }
 
+pub const ANONYMOUS: UserInformation = UserInformation::Anonymous;
 static EMPTY_ROLES: Vec<String> = vec![];
 
 impl UserInformation {
