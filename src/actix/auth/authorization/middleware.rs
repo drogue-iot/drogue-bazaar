@@ -1,5 +1,6 @@
 use super::{AuthZ, Context};
 use crate::auth::{UserInformation, ANONYMOUS};
+use actix_http::body::EitherBody;
 use actix_service::{Service, Transform};
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse},
@@ -23,7 +24,7 @@ where
     S::Future: 'static,
     B: 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse<EitherBody<B>>;
     type Error = S::Error;
     type Transform = AuthMiddleware<S>;
     type InitError = ();
@@ -44,7 +45,7 @@ where
     S::Future: 'static,
     B: 'static,
 {
-    type Response = ServiceResponse<B>;
+    type Response = ServiceResponse<EitherBody<B>>;
     type Error = Error;
     type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -71,9 +72,12 @@ where
             match result {
                 Ok(()) => {
                     // forward request to the next service
-                    srv.call(req).await
+                    srv.call(req).await.map(|res| res.map_into_left_body())
                 }
-                Err(e) => Err(e.into()),
+                Err(err) => {
+                    log::debug!("Authorization error: {err}");
+                    Ok(req.error_response(err).map_into_right_body())
+                }
             }
         })
     }
