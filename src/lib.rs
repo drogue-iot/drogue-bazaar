@@ -19,6 +19,7 @@ pub mod auth;
 ))]
 pub mod client;
 pub mod core;
+pub mod db;
 pub mod health;
 #[cfg(any(
     feature = "default-tls",
