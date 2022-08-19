@@ -120,16 +120,16 @@ pub enum AuthenticatorError {
 /// An authenticator to authenticate incoming requests.
 #[derive(Clone)]
 pub struct Authenticator {
-    clients: Vec<Client<Discovered, ExtendedClaims>>,
+    clients: Vec<(String, Client<Discovered, ExtendedClaims>)>,
 }
 
-struct ClientsDebug<'a>(&'a [Client<Discovered, ExtendedClaims>]);
+struct ClientsDebug<'a>(&'a [(String, Client<Discovered, ExtendedClaims>)]);
 
 impl<'a> Debug for ClientsDebug<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut d = f.debug_list();
         for c in self.0 {
-            d.entry(&c.client_id);
+            d.entry(&(&c.0, &c.1.client_id));
         }
         d.finish()
     }
@@ -143,20 +143,14 @@ impl Debug for Authenticator {
     }
 }
 
-impl From<Client<Discovered, ExtendedClaims>> for Authenticator {
-    fn from(client: Client<Discovered, ExtendedClaims>) -> Self {
-        Self::from_clients(vec![client])
-    }
-}
-
 impl Authenticator {
-    pub fn from_clients(clients: Vec<Client<Discovered, ExtendedClaims>>) -> Self {
+    pub fn from_clients(clients: Vec<(String, Client<Discovered, ExtendedClaims>)>) -> Self {
         Authenticator { clients }
     }
 
     /// Create a new authenticator by evaluating endpoints and SSO configuration.
     pub async fn new(mut config: AuthenticatorConfig) -> anyhow::Result<Self> {
-        let configs = config.clients.drain().map(|(_, v)| v);
+        let configs = config.clients.drain();
         Self::from_configs(config.global, configs).await
     }
 
@@ -165,18 +159,30 @@ impl Authenticator {
         configs: I,
     ) -> anyhow::Result<Self>
     where
-        I: IntoIterator<Item = AuthenticatorClientConfig>,
+        I: IntoIterator<Item = (String, AuthenticatorClientConfig)>,
     {
         let clients = stream::iter(configs)
             .map(Ok)
             .and_then(|config| {
                 let global = global.clone();
-                async move { create_client(&(&global, &config)).await }
+                let name = config.0;
+                let config = config.1;
+                async move { create_client(&(&global, &config)).await.map(|c| (name, c)) }
             })
             .try_collect()
             .await?;
 
         Ok(Self::from_clients(clients))
+    }
+
+    /// Find a client by its configuration name.
+    ///
+    /// This is a brute force search and shouldn't be called that often.
+    pub fn client_by_name(&self, name: &str) -> Option<&Client<Discovered, ExtendedClaims>> {
+        self.clients
+            .iter()
+            .find(|client| client.0 == name)
+            .map(|client| &client.1)
     }
 
     fn find_client(
@@ -199,8 +205,8 @@ impl Authenticator {
         // find the client to use
 
         let client = self.clients.iter().find(|client| {
-            let provider_iss = &client.provider.config().issuer;
-            let provider_id = &client.client_id;
+            let provider_iss = &client.1.provider.config().issuer;
+            let provider_id = &client.1.client_id;
 
             log::debug!("Checking client: {} / {}", provider_iss, provider_id);
             if provider_iss != &unverified_payload.standard_claims.iss {
@@ -215,7 +221,7 @@ impl Authenticator {
             true
         });
 
-        Ok(client)
+        Ok(client.map(|c| &c.1))
     }
 
     /// Validate a bearer token.
