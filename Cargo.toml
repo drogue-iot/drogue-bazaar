@@ -43,7 +43,7 @@ openssl = { version = "0.10", optional = true }
 actix-cors = { version = "0.6", optional = true }
 actix-http = { version = "3", optional = true }
 actix-service = { version = "2", optional = true }
-actix-web = { version = "4", optional = true }
+actix-web = { version = "4.2", optional = true }
 actix-web-extras = { version = "0.1", optional = true }
 actix-web-httpauth = { version = "0.8", optional = true }
 actix-web-prom = { version = "0.6", optional = true }
@@ -64,7 +64,7 @@ postgres-native-tls = { version = "0.5", optional = true }
 tokio-postgres = { version = "0.7", features = ["runtime", "with-serde_json-1", "with-uuid-1", "with-chrono-0_4"], optional = true }
 
 [patch.crates-io]
-actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
+#actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
 #actix-http = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
 #drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "55135e532e4ddfdf88dfa50df73b751063740c71" } # FIXME: awaiting release 0.11.0
 #drogue-client = { path = "../drogue-client" }
