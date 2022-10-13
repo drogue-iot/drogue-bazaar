@@ -7,15 +7,12 @@ pub enum TlsMode {
     Client,
 }
 
-pub trait TlsPskHandler:
-    Fn(Option<&[u8]>, &mut [u8]) -> Result<usize, std::io::Error> + Sync + Send
-{
-}
-
 /// TLS configuration
 pub struct TlsAuthConfig {
     pub mode: TlsMode,
-    pub psk: Option<Box<dyn TlsPskHandler>>,
+    pub psk: Option<
+        Box<dyn Fn(Option<&[u8]>, &mut [u8]) -> Result<usize, std::io::Error> + Sync + Send>,
+    >,
 }
 
 impl Default for TlsAuthConfig {
