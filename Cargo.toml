@@ -57,10 +57,6 @@ tracing-log = { version = "0.1", optional = true }
 tracing-opentelemetry = { version = "0.17", optional = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"], optional = true }
 
-# UDP dependencies
-tokio-util = { version = "0.7", optional = true }
-bytes = { version = "1", optional = true }
-
 # postgres dependencies
 deadpool = { version = "0.9", optional = true }
 deadpool-postgres = { version = "0.10", features = ["serde", "rt_tokio_1"], optional = true }
@@ -74,13 +70,7 @@ tokio-postgres = { version = "0.7", features = ["runtime", "with-serde_json-1", 
 #drogue-client = { path = "../drogue-client" }
 
 [features]
-default = ["default-tls", "actix", "openssl", "app", "postgres", "udp"]
-
-udp = [
-    "dep:tokio-util",
-    "dep:tokio",
-    "dep:bytes",
-]
+default = ["default-tls", "actix", "openssl", "app", "postgres"]
 
 app = [
     "opentelemetry",

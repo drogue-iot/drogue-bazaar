@@ -28,9 +28,6 @@ pub mod health;
 ))]
 pub mod reqwest;
 
-#[cfg(feature = "udp")]
-pub mod udp;
-
 #[doc(hidden)]
 pub mod prelude {
     pub use crate::core::default::is_default;
