@@ -1,4 +1,4 @@
-use crate::core::tls::TlsMode;
+use crate::core::tls::{TlsAuthConfig, TlsMode};
 use actix_http::{Request, Response};
 use actix_service::{IntoServiceFactory, ServiceFactory};
 use actix_web::{body::MessageBody, dev::AppConfig, Error, HttpServer};
@@ -9,7 +9,7 @@ use tokio::io;
 pub fn bind_http<F, I, S, B, K, C>(
     main: HttpServer<F, I, S, B>,
     bind_addr: String,
-    tls_mode: Option<TlsMode>,
+    tls_auth_config: Option<TlsAuthConfig>,
     key_file: Option<K>,
     cert_bundle_file: Option<C>,
 ) -> io::Result<HttpServer<F, I, S, B>>
@@ -24,12 +24,12 @@ where
     K: AsRef<Path>,
     C: AsRef<Path>,
 {
-    match (tls_mode, key_file, cert_bundle_file) {
+    match (tls_auth_config, key_file, cert_bundle_file) {
         #[allow(unused_variables)]
-        (Some(tls_mode), Some(key), Some(cert)) => {
+        (Some(tls_auth_config), Some(key), Some(cert)) => {
             #[cfg(feature = "openssl")]
             if cfg!(feature = "openssl") {
-                return bind_http_openssl(main, tls_mode, bind_addr, key, cert);
+                return bind_http_openssl(main, tls_auth_config, bind_addr, key, cert);
             }
             panic!("TLS is required, but no TLS implementation enabled")
         }
@@ -47,7 +47,7 @@ where
 #[cfg(feature = "openssl")]
 fn bind_http_openssl<F, I, S, B, K, C>(
     main: HttpServer<F, I, S, B>,
-    tls_mode: TlsMode,
+    tls_auth_config: TlsAuthConfig,
     bind_addr: String,
     key_file: K,
     cert_bundle_file: C,
@@ -69,7 +69,7 @@ where
     builder.set_private_key_file(key_file, ssl::SslFiletype::PEM)?;
     builder.set_certificate_chain_file(cert_bundle_file)?;
 
-    if let TlsMode::Client = tls_mode {
+    if let TlsMode::Client = tls_auth_config.mode {
         // we ask for client certificates, but don't enforce them
         builder.set_verify_callback(ssl::SslVerifyMode::PEER, |_, ctx| {
             log::debug!(
@@ -79,6 +79,18 @@ where
                     .unwrap_or_else(|| "<unknown>".into())
             );
             true
+        });
+    }
+
+    if let Some(psk) = tls_auth_config.psk {
+        builder.set_psk_server_callback(move |_ssl, identity, secret_mut| {
+            match psk(identity, secret_mut) {
+                Ok(len) => Ok(len),
+                Err(e) => {
+                    log::debug!("Error during TLS-PSK handshake: {:?}", e);
+                    Ok(0)
+                }
+            }
         });
     }
 

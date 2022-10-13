@@ -1,8 +1,7 @@
 //! TLS tooling.
 
-mod mode;
-
-pub use mode::*;
+mod auth;
+pub use auth::*;
 
 use serde::{Deserialize, Serialize};
 use std::path::Path;

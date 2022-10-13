@@ -2,7 +2,7 @@ use super::{bind::bind_http, config::HttpConfig};
 use crate::app::{Startup, StartupExt};
 use crate::{
     app::RuntimeConfig,
-    core::tls::{TlsMode, WithTlsMode},
+    core::tls::{TlsAuthConfig, WithTlsAuthConfig},
 };
 use actix_cors::Cors;
 use actix_http::Extensions;
@@ -50,7 +50,7 @@ where
     app_builder: Box<F>,
     cors_builder: CorsBuilder,
     on_connect: Option<Box<OnConnectFn>>,
-    tls_mode: TlsMode,
+    tls_auth_config: TlsAuthConfig,
     tracing: bool,
 }
 
@@ -65,7 +65,7 @@ where
             app_builder: Box::new(app_builder),
             cors_builder: Default::default(),
             on_connect: None,
-            tls_mode: TlsMode::NoClient,
+            tls_auth_config: TlsAuthConfig::default(),
             tracing: runtime.map(|r| r.tracing.is_enabled()).unwrap_or_default(),
         }
     }
@@ -86,8 +86,8 @@ where
     }
 
     /// Set the TLS mode.
-    pub fn tls_mode<I: Into<TlsMode>>(mut self, tls_mode: I) -> Self {
-        self.tls_mode = tls_mode.into();
+    pub fn tls_auth_config<I: Into<TlsAuthConfig>>(mut self, tls_auth_config: I) -> Self {
+        self.tls_auth_config = tls_auth_config.into();
         self
     }
 
@@ -103,7 +103,7 @@ where
     /// using [`crate::app::Startup`].
     ///
     /// In most cases you want to use [`Self::start`] instead.
-    pub fn run(self) -> Result<BoxFuture<'static, Result<(), anyhow::Error>>, anyhow::Error> {
+    pub fn run(mut self) -> Result<BoxFuture<'static, Result<(), anyhow::Error>>, anyhow::Error> {
         let max_payload_size = self.config.max_payload_size;
         let max_json_payload_size = self.config.max_json_payload_size;
 
@@ -160,10 +160,16 @@ where
             main = main.on_connect(on_connect);
         }
 
+        if self.config.disable_tls_psk {
+            self.tls_auth_config.psk.take();
+        }
+
         let mut main = bind_http(
             main,
             self.config.bind_addr,
-            self.config.disable_tls.with_tls_mode(self.tls_mode),
+            self.config
+                .disable_tls
+                .with_tls_auth_config(self.tls_auth_config),
             self.config.key_file,
             self.config.cert_bundle_file,
         )?;

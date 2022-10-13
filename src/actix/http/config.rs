@@ -13,6 +13,8 @@ pub struct HttpConfig {
     #[serde(default)]
     pub disable_tls: bool,
     #[serde(default)]
+    pub disable_tls_psk: bool,
+    #[serde(default)]
     pub cert_bundle_file: Option<String>,
     #[serde(default)]
     pub key_file: Option<String>,
@@ -31,6 +33,7 @@ impl Default for HttpConfig {
             max_json_payload_size: defaults::max_json_payload_size(),
             max_payload_size: defaults::max_payload_size(),
             disable_tls: false,
+            disable_tls_psk: false,
             cert_bundle_file: None,
             key_file: None,
             workers: None,
