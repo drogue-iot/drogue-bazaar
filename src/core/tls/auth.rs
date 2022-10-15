@@ -10,8 +10,17 @@ pub enum TlsMode {
 /// TLS configuration
 pub struct TlsAuthConfig {
     pub mode: TlsMode,
+    #[cfg(feature = "openssl")]
     pub psk: Option<
-        Box<dyn Fn(Option<&[u8]>, &mut [u8]) -> Result<usize, std::io::Error> + Sync + Send>,
+        Box<
+            dyn Fn(
+                    &mut openssl::ssl::SslRef,
+                    Option<&[u8]>,
+                    &mut [u8],
+                ) -> Result<usize, std::io::Error>
+                + Sync
+                + Send,
+        >,
     >,
 }
 
@@ -19,6 +28,7 @@ impl Default for TlsAuthConfig {
     fn default() -> Self {
         Self {
             mode: TlsMode::NoClient,
+            #[cfg(feature = "openssl")]
             psk: None,
         }
     }

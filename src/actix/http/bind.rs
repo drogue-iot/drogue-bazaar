@@ -83,8 +83,8 @@ where
     }
 
     if let Some(psk) = tls_auth_config.psk {
-        builder.set_psk_server_callback(move |_ssl, identity, secret_mut| {
-            match psk(identity, secret_mut) {
+        builder.set_psk_server_callback(move |ssl, identity, secret_mut| {
+            match psk(ssl, identity, secret_mut) {
                 Ok(len) => Ok(len),
                 Err(e) => {
                     log::debug!("Error during TLS-PSK handshake: {:?}", e);
