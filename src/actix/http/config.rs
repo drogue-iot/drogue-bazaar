@@ -1,6 +1,6 @@
 use super::defaults;
-use serde::Deserialize;
 use crate::actix::http::CorsConfig;
+use serde::Deserialize;
 
 /// HTTP server configuration.
 #[derive(Clone, Debug, Deserialize)]
