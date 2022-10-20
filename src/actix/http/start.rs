@@ -15,6 +15,7 @@ use actix_web_extras::middleware::Condition;
 use futures_core::future::BoxFuture;
 use futures_util::{FutureExt, TryFutureExt};
 use std::{any::Any, sync::Arc};
+use crate::actix::http::CorsConfig;
 
 /// Build a CORS setup.
 #[derive(Clone)]
@@ -36,6 +37,19 @@ where
 {
     fn from(f: F) -> Self {
         CorsBuilder::Custom(Arc::new(f))
+    }
+}
+
+impl From<CorsConfig> for CorsBuilder {
+    fn from(cfg: CorsConfig) -> Self {
+
+        if cfg.allow_any_origin {
+           CorsBuilder::Permissive
+        } else if cfg.allow_origin_url.is_some() {
+            (move || Cors::from(cfg.clone())).into()
+        } else {
+            CorsBuilder::Disabled
+        }
     }
 }
 
