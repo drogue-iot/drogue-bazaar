@@ -1,5 +1,6 @@
 use super::defaults;
 use serde::Deserialize;
+use crate::actix::http::CorsConfig;
 
 /// HTTP server configuration.
 #[derive(Clone, Debug, Deserialize)]
@@ -24,6 +25,8 @@ pub struct HttpConfig {
 
     #[serde(default)]
     pub metrics_namespace: Option<String>,
+
+    pub cors: CorsConfig,
 }
 
 impl Default for HttpConfig {
@@ -38,6 +41,7 @@ impl Default for HttpConfig {
             key_file: None,
             workers: None,
             metrics_namespace: None,
+            cors: CorsConfig::default(),
         }
     }
 }
