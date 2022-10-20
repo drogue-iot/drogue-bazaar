@@ -1,5 +1,7 @@
+use std::sync::Arc;
 use actix_cors::Cors;
 use serde::Deserialize;
+use crate::actix::http::CorsBuilder;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct CorsConfig {
@@ -26,5 +28,17 @@ impl From<CorsConfig> for Cors {
             cors = cors.allowed_origin(origin.as_str());
         }
         cors
+    }
+}
+
+impl From<CorsConfig> for CorsBuilder {
+    fn from(config: CorsConfig) -> Self {
+        if config.allow_any_origin {
+            CorsBuilder::Permissive
+        } else if config.allow_origin_url.is_some() {
+            CorsBuilder::Custom(config.into())
+        } else {
+            CorsBuilder::Disabled
+        }
     }
 }

@@ -63,7 +63,7 @@ where
         Self {
             config,
             app_builder: Box::new(app_builder),
-            cors_builder: Default::default(),
+            cors_builder: config.cors.into(),
             on_connect: None,
             tls_auth_config: TlsAuthConfig::default(),
             tracing: runtime.map(|r| r.tracing.is_enabled()).unwrap_or_default(),
