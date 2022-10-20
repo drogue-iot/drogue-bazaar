@@ -1,7 +1,7 @@
 use actix_cors::Cors;
 use serde::Deserialize;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct CorsConfig {
     // default for bool is false
     #[serde(default)]
@@ -26,14 +26,5 @@ impl From<CorsConfig> for Cors {
             cors = cors.allowed_origin(origin.as_str());
         }
         cors
-    }
-}
-
-impl Default for CorsConfig {
-    fn default() -> Self {
-       CorsConfig {
-           allow_any_origin: false,
-           allow_origin_url: None,
-       }
     }
 }
