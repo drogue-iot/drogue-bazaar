@@ -161,6 +161,7 @@ where
         }
 
         if self.config.disable_tls_psk {
+            #[cfg(feature = "openssl")]
             self.tls_auth_config.psk.take();
         }
 
