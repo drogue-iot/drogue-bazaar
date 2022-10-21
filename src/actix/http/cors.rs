@@ -1,13 +1,7 @@
 use actix_cors::Cors;
+use http::Method;
 use serde::Deserialize;
-
-#[derive(Clone, Debug, Deserialize)]
-pub enum Method {
-    GET,
-    POST,
-    PUT,
-    DELETE
-}
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct CorsConfig {
@@ -19,7 +13,21 @@ pub struct CorsConfig {
     pub allow_origin_url: Option<Vec<String>>,
 
     #[serde(default)]
-    pub allowed_methods: Option<Vec<Method>>
+    pub allowed_methods: Option<Vec<String>>,
+}
+
+impl CorsConfig {
+    pub fn set_allowed_methods(&mut self, methods: Vec<&str>) -> &Self {
+        let methods: Vec<String> = methods.into_iter().map(|m| m.into()).collect();
+        self.allowed_methods = Some(methods);
+        self
+    }
+
+    pub fn set_allowed_urls(&mut self, urls: Vec<&str>) -> &Self {
+        let url: Vec<String> = urls.into_iter().map(|m| m.into()).collect();
+        self.allow_origin_url = Some(url);
+        self
+    }
 }
 
 impl From<CorsConfig> for Cors {
@@ -40,20 +48,12 @@ impl From<CorsConfig> for Cors {
         }
 
         if let Some(methods) = cfg.allowed_methods {
-            let methods: Vec<&str> = methods.into_iter().map(|m| m.into()).collect();
+            let methods: Vec<Method> = methods
+                .into_iter()
+                .filter_map(|m| Method::from_str(m.as_str()).ok())
+                .collect();
             cors = cors.allowed_methods(methods);
         }
         cors
-    }
-}
-
-impl From<Method> for &str {
-    fn from(method: Method) -> Self {
-        match method {
-            Method::GET => "GET",
-            Method::POST => "POST",
-            Method::PUT => "PUT",
-            Method::DELETE => "DELETE",
-        }
     }
 }
