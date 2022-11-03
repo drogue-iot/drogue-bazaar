@@ -103,7 +103,9 @@ where
     /// using [`crate::app::Startup`].
     ///
     /// In most cases you want to use [`Self::start`] instead.
-    pub fn run(mut self) -> Result<BoxFuture<'static, Result<(), anyhow::Error>>, anyhow::Error> {
+    pub fn run(
+        #[allow(unused_mut)] mut self,
+    ) -> Result<BoxFuture<'static, Result<(), anyhow::Error>>, anyhow::Error> {
         let max_payload_size = self.config.max_payload_size;
         let max_json_payload_size = self.config.max_json_payload_size;
 

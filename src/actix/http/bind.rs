@@ -1,4 +1,4 @@
-use crate::core::tls::{TlsAuthConfig, TlsMode};
+use crate::core::tls::TlsAuthConfig;
 use actix_http::{Request, Response};
 use actix_service::{IntoServiceFactory, ServiceFactory};
 use actix_web::{body::MessageBody, dev::AppConfig, Error, HttpServer};
@@ -63,7 +63,9 @@ where
     K: AsRef<Path>,
     C: AsRef<Path>,
 {
+    use crate::core::tls::TlsMode;
     use openssl::ssl;
+
     let method = ssl::SslMethod::tls_server();
     let mut builder = ssl::SslAcceptor::mozilla_intermediate_v5(method)?;
     builder.set_private_key_file(key_file, ssl::SslFiletype::PEM)?;
