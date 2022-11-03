@@ -49,7 +49,7 @@ pub fn init_jaeger(name: &str) {
     opentelemetry::global::set_text_map_propagator(
         opentelemetry::sdk::propagation::TraceContextPropagator::new(),
     );
-    let pipeline = opentelemetry_jaeger::new_pipeline()
+    let pipeline = opentelemetry_jaeger::new_agent_pipeline()
         .with_service_name(name)
         .with_auto_split_batch(true)
         .with_trace_config(opentelemetry::sdk::trace::Config::default().with_sampler(
