@@ -1,4 +1,5 @@
 use super::{bind::bind_http, config::HttpConfig};
+use crate::actix::http::CorsConfig;
 use crate::app::{Startup, StartupExt};
 use crate::{
     app::RuntimeConfig,
@@ -39,6 +40,18 @@ where
     }
 }
 
+impl From<CorsConfig> for CorsBuilder {
+    fn from(cfg: CorsConfig) -> Self {
+        if cfg.allow_any_origin {
+            CorsBuilder::Permissive
+        } else if cfg.allow_origin_url.is_some() {
+            (move || Cors::from(cfg.clone())).into()
+        } else {
+            CorsBuilder::Disabled
+        }
+    }
+}
+
 pub type OnConnectFn = dyn Fn(&dyn Any, &mut Extensions) + Send + Sync + 'static;
 
 /// Build an HTTP server.
@@ -61,9 +74,9 @@ where
     /// Start building a new HTTP server instance.
     pub fn new(config: HttpConfig, runtime: Option<&RuntimeConfig>, app_builder: F) -> Self {
         Self {
-            config,
+            config: config.clone(),
             app_builder: Box::new(app_builder),
-            cors_builder: Default::default(),
+            cors_builder: (move || Cors::from(config.clone().cors)).into(),
             on_connect: None,
             tls_auth_config: TlsAuthConfig::default(),
             tracing: runtime.map(|r| r.tracing.is_enabled()).unwrap_or_default(),

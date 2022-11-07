@@ -34,7 +34,6 @@ impl ApplicationAuthorizer {
     ) -> AuthZ {
         AuthZ::new(
             user_auth
-                .clone()
                 .map(|client| ApplicationAuthorizer {
                     client,
                     permission,

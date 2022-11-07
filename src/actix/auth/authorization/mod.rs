@@ -104,7 +104,7 @@ where
         self.0
             .authorize(context)
             .await
-            .map(|r| Some(r.unwrap_or_else(|| self.1)))
+            .map(|r| Some(r.unwrap_or(self.1)))
     }
 }
 
