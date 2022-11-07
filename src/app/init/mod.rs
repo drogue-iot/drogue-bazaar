@@ -4,7 +4,7 @@ pub use self::tracing::Tracing;
 
 pub fn phase1(dotenv: bool) {
     if dotenv {
-        let result = dotenv::dotenv();
+        let result = dotenvy::dotenv();
         log::info!("dotenv: {result:?}");
     }
 }
