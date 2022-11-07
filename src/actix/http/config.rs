@@ -26,6 +26,7 @@ pub struct HttpConfig {
     #[serde(default)]
     pub metrics_namespace: Option<String>,
 
+    #[serde(default)]
     pub cors: CorsConfig,
 }
 
