@@ -62,7 +62,7 @@ where
                 let identity = ext.get::<UserInformation>().unwrap_or(&ANONYMOUS);
 
                 let context = Context {
-                    identity: &identity,
+                    identity,
                     request: &req,
                 };
 

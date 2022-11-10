@@ -27,7 +27,7 @@ pub struct HttpConfig {
     pub metrics_namespace: Option<String>,
 
     #[serde(default)]
-    pub cors: CorsConfig,
+    pub cors: Option<CorsConfig>,
 }
 
 impl Default for HttpConfig {
@@ -42,7 +42,7 @@ impl Default for HttpConfig {
             key_file: None,
             workers: None,
             metrics_namespace: None,
-            cors: CorsConfig::default(),
+            cors: None,
         }
     }
 }
