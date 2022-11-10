@@ -10,7 +10,7 @@ pub struct CorsConfig {
     pub mode: CorsMode,
 
     #[serde(default)]
-    pub allow_origin_url: Option<CommaSeparatedVec>,
+    pub allow_origin_urls: Option<CommaSeparatedVec>,
 
     #[serde(default)]
     pub allowed_methods: Option<CommaSeparatedVec>,
@@ -43,9 +43,6 @@ impl CorsConfig {
             ..Default::default()
         }
     }
-}
-
-impl CorsConfig {
     pub fn set_allowed_methods(mut self, methods: Vec<&str>) -> Self {
         let methods: Vec<String> = methods.into_iter().map(|m| m.into()).collect();
         self.allowed_methods = Some(methods.into());
@@ -54,7 +51,7 @@ impl CorsConfig {
 
     pub fn set_allowed_urls(mut self, urls: Vec<&str>) -> Self {
         let url: Vec<String> = urls.into_iter().map(|m| m.into()).collect();
-        self.allow_origin_url = Some(url.into());
+        self.allow_origin_urls = Some(url.into());
         self
     }
 }
@@ -72,7 +69,7 @@ impl From<CorsConfig> for Option<Cors> {
                     ])
                     .max_age(3600);
 
-                if let Some(origin) = &cfg.allow_origin_url {
+                if let Some(origin) = &cfg.allow_origin_urls {
                     for url in &origin.0 {
                         cors = cors.allowed_origin(url.as_str());
                     }
