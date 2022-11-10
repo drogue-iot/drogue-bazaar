@@ -52,6 +52,18 @@ where
         self
     }
 
+    /// Set a default CORS config without overriding the existing one.
+    pub fn default_cors(mut self, default: CorsConfig) -> Self {
+        if let Some(ref mut cors) = self.config.cors {
+            if cors.allowed_methods.is_none() {
+                cors.allowed_methods = default.allowed_methods;
+            }
+        } else {
+            self.config.cors = Some(default);
+        }
+        self
+    }
+
     /// Set an "on connect" handler.
     pub fn on_connect<O>(mut self, on_connect: O) -> Self
     where

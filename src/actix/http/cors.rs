@@ -46,13 +46,13 @@ impl CorsConfig {
 }
 
 impl CorsConfig {
-    pub fn set_allowed_methods(&mut self, methods: Vec<&str>) -> &Self {
+    pub fn set_allowed_methods(mut self, methods: Vec<&str>) -> Self {
         let methods: Vec<String> = methods.into_iter().map(|m| m.into()).collect();
         self.allowed_methods = Some(methods.into());
         self
     }
 
-    pub fn set_allowed_urls(&mut self, urls: Vec<&str>) -> &Self {
+    pub fn set_allowed_urls(mut self, urls: Vec<&str>) -> Self {
         let url: Vec<String> = urls.into_iter().map(|m| m.into()).collect();
         self.allow_origin_url = Some(url.into());
         self
