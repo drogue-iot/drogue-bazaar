@@ -18,7 +18,7 @@ async-trait = "0.1"
 chrono = "0.4"
 config = "0.13"
 dotenvy = "0.15"
-drogue-client = "0.11.0-alpha.1"
+drogue-client = "0.11.0-alpha.2"
 env_logger = "0.9"
 futures-core = "0.3"
 futures-util = "0.3"
@@ -66,7 +66,7 @@ tokio-postgres = { version = "0.7", features = ["runtime", "with-serde_json-1", 
 [patch.crates-io]
 #actix-web = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
 #actix-http = { git = "https://github.com/ctron/actix-web", rev = "f3f41a0cc70e43564f8243b3ff425195566b5f16" } # FIXME: awaiting release 4.2.0
-drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "78aaf1b0ab7524f428efec5a9de75a1242701951" } # FIXME: awaiting release 0.11.0
+#drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "78aaf1b0ab7524f428efec5a9de75a1242701951" } # FIXME: awaiting release 0.11.0
 #drogue-client = { path = "../drogue-client" }
 
 [features]
