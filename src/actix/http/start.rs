@@ -15,42 +15,7 @@ use actix_web::{
 use actix_web_extras::middleware::Condition;
 use futures_core::future::BoxFuture;
 use futures_util::{FutureExt, TryFutureExt};
-use std::{any::Any, sync::Arc};
-
-/// Build a CORS setup.
-#[derive(Clone)]
-pub enum CorsBuilder {
-    Disabled,
-    Permissive,
-    Custom(Arc<dyn Fn() -> Cors + Send + Sync>),
-}
-
-impl Default for CorsBuilder {
-    fn default() -> Self {
-        Self::Disabled
-    }
-}
-
-impl<F> From<F> for CorsBuilder
-where
-    F: Fn() -> Cors + Send + Sync + 'static,
-{
-    fn from(f: F) -> Self {
-        CorsBuilder::Custom(Arc::new(f))
-    }
-}
-
-impl From<CorsConfig> for CorsBuilder {
-    fn from(cfg: CorsConfig) -> Self {
-        if cfg.allow_any_origin {
-            CorsBuilder::Permissive
-        } else if cfg.allow_origin_url.is_some() {
-            (move || Cors::from(cfg.clone())).into()
-        } else {
-            CorsBuilder::Disabled
-        }
-    }
-}
+use std::any::Any;
 
 pub type OnConnectFn = dyn Fn(&dyn Any, &mut Extensions) + Send + Sync + 'static;
 
@@ -61,7 +26,6 @@ where
 {
     config: HttpConfig,
     app_builder: Box<F>,
-    cors_builder: CorsBuilder,
     on_connect: Option<Box<OnConnectFn>>,
     tls_auth_config: TlsAuthConfig,
     tracing: bool,
@@ -74,18 +38,29 @@ where
     /// Start building a new HTTP server instance.
     pub fn new(config: HttpConfig, runtime: Option<&RuntimeConfig>, app_builder: F) -> Self {
         Self {
-            config: config.clone(),
+            config,
             app_builder: Box::new(app_builder),
-            cors_builder: (move || Cors::from(config.clone().cors)).into(),
             on_connect: None,
             tls_auth_config: TlsAuthConfig::default(),
             tracing: runtime.map(|r| r.tracing.is_enabled()).unwrap_or_default(),
         }
     }
 
-    /// Set the CORS builder.
-    pub fn cors<I: Into<CorsBuilder>>(mut self, cors_builder: I) -> Self {
-        self.cors_builder = cors_builder.into();
+    /// Set the CORS config.
+    pub fn cors(mut self, cfg: CorsConfig) -> Self {
+        self.config.cors = Some(cfg);
+        self
+    }
+
+    /// Set a default CORS config without overriding the existing one.
+    pub fn default_cors(mut self, default: CorsConfig) -> Self {
+        if let Some(ref mut cors) = self.config.cors {
+            if cors.allowed_methods.is_none() {
+                cors.allowed_methods = default.allowed_methods;
+            }
+        } else {
+            self.config.cors = Some(default);
+        }
         self
     }
 
@@ -136,11 +111,7 @@ where
             // add wrapper (the last added is executed first)
 
             // enable CORS support
-            let cors = match self.cors_builder.clone() {
-                CorsBuilder::Disabled => None,
-                CorsBuilder::Permissive => Some(Cors::permissive()),
-                CorsBuilder::Custom(f) => Some(f()),
-            };
+            let cors: Option<Cors> = self.config.cors.clone().unwrap_or_default().into();
             let app = app.wrap(Condition::from_option(cors));
 
             // record request metrics
