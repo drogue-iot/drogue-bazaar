@@ -52,18 +52,6 @@ where
         self
     }
 
-    /// Set a default CORS config without overriding the existing one.
-    pub fn default_cors(mut self, default: CorsConfig) -> Self {
-        if let Some(ref mut cors) = self.config.cors {
-            if cors.allowed_methods.is_none() {
-                cors.allowed_methods = default.allowed_methods;
-            }
-        } else {
-            self.config.cors = Some(default);
-        }
-        self
-    }
-
     /// Set an "on connect" handler.
     pub fn on_connect<O>(mut self, on_connect: O) -> Self
     where
@@ -105,13 +93,23 @@ where
         // FIXME: replace with direct conversion once nlopes/actix-web-prom#67 is merged
         .map_err(|err| anyhow::anyhow!("Failed to build prometheus middleware: {err}"))?;
 
+        // we just try to parse it once, so we can be sure it doesn't panic later
+        let _: Option<Cors> = self.config.cors.clone().unwrap_or_default().try_into()?;
+
         let mut main = HttpServer::new(move || {
             let app = App::new();
 
             // add wrapper (the last added is executed first)
 
             // enable CORS support
-            let cors: Option<Cors> = self.config.cors.clone().unwrap_or_default().into();
+            // this should not panic, as we did parse the configuration once, before the http builder
+            let cors: Option<Cors> = self
+                .config
+                .cors
+                .clone()
+                .unwrap_or_default()
+                .try_into()
+                .expect("Configuration must be valid");
             let app = app.wrap(Condition::from_option(cors));
 
             // record request metrics
