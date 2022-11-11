@@ -65,6 +65,15 @@ impl Default for CorsConfig {
     }
 }
 
+impl CorsConfig {
+    /// Create a default "permissive" configuration.
+    ///
+    /// This creates a [`Cors::permissive()`] based instance, with no customizations.
+    pub fn permissive() -> Self {
+        Self::Permissive(Default::default())
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum CorsConfigError {
     #[error("Invalid HTTP header name: {0}")]
