@@ -11,7 +11,7 @@ pub struct CorsConfig {
     pub mode: CorsMode,
 
     #[serde(default)]
-    pub allow_origin_urls: Option<CommaSeparatedVec>,
+    pub allowed_origin_urls: Option<CommaSeparatedVec>,
 
     #[serde(default)]
     pub allowed_methods: Option<CommaSeparatedVec>,
@@ -62,7 +62,7 @@ impl CorsConfig {
 
     pub fn set_allowed_urls(mut self, urls: Vec<&str>) -> Self {
         let url: Vec<String> = urls.into_iter().map(|m| m.into()).collect();
-        self.allow_origin_urls = Some(url.into());
+        self.allowed_origin_urls = Some(url.into());
         self
     }
 }
@@ -80,7 +80,7 @@ impl From<CorsConfig> for Option<Cors> {
                     ])
                     .max_age(cfg.max_age.as_secs() as usize);
 
-                if let Some(origin) = &cfg.allow_origin_urls {
+                if let Some(origin) = &cfg.allowed_origin_urls {
                     for url in &origin.0 {
                         cors = cors.allowed_origin(url.as_str());
                     }
