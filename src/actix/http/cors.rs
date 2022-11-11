@@ -17,6 +17,7 @@ pub struct CorsConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum CorsMode {
     Permissive,
     Disabled,
@@ -43,6 +44,7 @@ impl CorsConfig {
             ..Default::default()
         }
     }
+
     pub fn set_allowed_methods(mut self, methods: Vec<&str>) -> Self {
         let methods: Vec<String> = methods.into_iter().map(|m| m.into()).collect();
         self.allowed_methods = Some(methods.into());
@@ -67,7 +69,7 @@ impl From<CorsConfig> for Option<Cors> {
                         http::header::AUTHORIZATION,
                         http::header::CONTENT_TYPE,
                     ])
-                    .max_age(3600);
+                    .max_age(cfg.max_age.as_secs() as usize);
 
                 if let Some(origin) = &cfg.allow_origin_urls {
                     for url in &origin.0 {
