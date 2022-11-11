@@ -83,7 +83,7 @@ pub enum CorsConfigError {
 }
 
 impl CorsSettings {
-    pub fn apply(self, mut cors: Cors) -> Result<Cors, CorsConfigError> {
+    pub fn apply(&self, mut cors: Cors) -> Result<Cors, CorsConfigError> {
         if let Some(max_age) = self.max_age.map(|age| age.as_secs() as usize) {
             cors = cors.max_age(max_age);
         }
@@ -184,15 +184,26 @@ impl CorsSettings {
     }
 }
 
-impl TryFrom<CorsConfig> for Option<Cors> {
-    type Error = CorsConfigError;
+pub trait BuildCors {
+    fn build_cors(&self) -> Result<Option<Cors>, CorsConfigError>;
+}
 
-    fn try_from(cfg: CorsConfig) -> Result<Option<Cors>, CorsConfigError> {
-        Ok(match cfg {
+impl BuildCors for CorsConfig {
+    fn build_cors(&self) -> Result<Option<Cors>, CorsConfigError> {
+        Ok(match self {
             CorsConfig::Disabled => None,
             CorsConfig::Permissive(settings) => Some(settings.apply(Cors::permissive())?),
             CorsConfig::Custom(settings) => Some(settings.apply(Cors::default())?),
         })
+    }
+}
+
+impl BuildCors for Option<CorsConfig> {
+    fn build_cors(&self) -> Result<Option<Cors>, CorsConfigError> {
+        match self {
+            None => Ok(None),
+            Some(cors) => cors.build_cors(),
+        }
     }
 }
 
@@ -224,7 +235,7 @@ mod test {
             <Test as ConfigFromEnv>::from(Environment::default().prefix("HTTP").source(Some(env)))
                 .unwrap();
 
-        cfg.cors.try_into()
+        cfg.cors.build_cors()
     }
 
     #[test]

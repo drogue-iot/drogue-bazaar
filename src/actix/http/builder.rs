@@ -1,5 +1,5 @@
 use super::{bind::bind_http, config::HttpConfig};
-use crate::actix::http::CorsConfig;
+use crate::actix::http::{BuildCors, CorsConfig};
 use crate::app::{Startup, StartupExt};
 use crate::{
     app::RuntimeConfig,
@@ -75,6 +75,18 @@ where
         Ok(())
     }
 
+    /// Get the effective CORS config.
+    ///
+    /// This will either the configuration provided through the [`HttpConfig`], or the one
+    /// registered by the application using [`Self::default_cors()`]
+    fn cors_config(&self) -> Option<CorsConfig> {
+        self.config
+            .cors
+            .as_ref()
+            .or(self.default_cors.as_ref())
+            .cloned()
+    }
+
     /// Run the server.
     ///
     /// **NOTE:** This only returns a future, which was to be scheduled on some executor. Possibly
@@ -95,8 +107,11 @@ where
         // FIXME: replace with direct conversion once nlopes/actix-web-prom#67 is merged
         .map_err(|err| anyhow::anyhow!("Failed to build prometheus middleware: {err}"))?;
 
+        let cors = self.cors_config();
+        log::debug!("Effective CORS config {cors:?}");
+
         // we just try to parse it once, so we can be sure it doesn't panic later
-        let _: Option<Cors> = self.config.cors.clone().unwrap_or_default().try_into()?;
+        let _: Option<Cors> = cors.build_cors()?;
 
         let mut main = HttpServer::new(move || {
             let app = App::new();
@@ -105,13 +120,7 @@ where
 
             // enable CORS support
             // this should not panic, as we did parse the configuration once, before the http builder
-            let cors: Option<Cors> = self
-                .config
-                .cors
-                .clone()
-                .unwrap_or_default()
-                .try_into()
-                .expect("Configuration must be valid");
+            let cors: Option<Cors> = cors.build_cors().expect("Configuration must be valid");
             let app = app.wrap(Condition::from_option(cors));
 
             // record request metrics
