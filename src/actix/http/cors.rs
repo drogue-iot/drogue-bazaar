@@ -3,6 +3,7 @@ use actix_cors::Cors;
 use http::Method;
 use serde::Deserialize;
 use std::str::FromStr;
+use std::time::Duration;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct CorsConfig {
@@ -14,6 +15,14 @@ pub struct CorsConfig {
 
     #[serde(default)]
     pub allowed_methods: Option<CommaSeparatedVec>,
+
+    #[serde(with = "humantime_serde")]
+    #[serde(default = "default_max_age")]
+    pub max_age: Duration,
+}
+
+const fn default_max_age() -> Duration {
+    Duration::from_secs(3600)
 }
 
 #[derive(Clone, Debug, Deserialize)]
