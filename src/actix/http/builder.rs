@@ -25,6 +25,7 @@ where
     F: Fn(&mut ServiceConfig) + Send + Clone + 'static,
 {
     config: HttpConfig,
+    default_cors: Option<CorsConfig>,
     app_builder: Box<F>,
     on_connect: Option<Box<OnConnectFn>>,
     tls_auth_config: TlsAuthConfig,
@@ -39,6 +40,7 @@ where
     pub fn new(config: HttpConfig, runtime: Option<&RuntimeConfig>, app_builder: F) -> Self {
         Self {
             config,
+            default_cors: None,
             app_builder: Box::new(app_builder),
             on_connect: None,
             tls_auth_config: TlsAuthConfig::default(),
@@ -46,9 +48,9 @@ where
         }
     }
 
-    /// Set the CORS config.
-    pub fn cors(mut self, cfg: CorsConfig) -> Self {
-        self.config.cors = Some(cfg);
+    /// Set a default CORS config without overriding the existing one.
+    pub fn default_cors<C: Into<Option<CorsConfig>>>(mut self, default_cors: C) -> Self {
+        self.default_cors = default_cors.into();
         self
     }
 
