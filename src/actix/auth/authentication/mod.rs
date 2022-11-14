@@ -2,7 +2,7 @@ mod middleware;
 
 use crate::auth::{openid, pat, AuthError, UserInformation};
 use ::openid::{Claims, CustomClaims};
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, LocalResult, TimeZone, Utc};
 pub use middleware::AuthenticatedUntil;
 use tracing::instrument;
 
@@ -111,7 +111,7 @@ impl AuthN {
                         match openid.validate_token(&token).await {
                             Ok(token) => Ok((
                                 UserInformation::Authenticated(token.clone().into()),
-                                Some(Utc.timestamp(token.standard_claims().exp(), 0)),
+                                Some(to_expiration(token.standard_claims().exp())?),
                             )),
                             Err(err) => {
                                 log::debug!("Authentication error: {err}");
@@ -128,5 +128,16 @@ impl AuthN {
                 Credentials::Anonymous => Ok((UserInformation::Anonymous, None)),
             },
         }
+    }
+}
+
+/// Convert "exp" timestamp to `DateTime`.
+fn to_expiration(exp: i64) -> Result<DateTime<Utc>, AuthError> {
+    match Utc.timestamp_opt(exp, 0) {
+        LocalResult::None => Err(AuthError::Internal(
+            "Unable to convert timestamp".to_string(),
+        )),
+        LocalResult::Single(exp) => Ok(exp),
+        LocalResult::Ambiguous(min, _) => Ok(min),
     }
 }
