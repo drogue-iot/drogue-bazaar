@@ -157,30 +157,29 @@ impl CorsSettings {
     fn convert_headers(
         headers: &Option<CommaSeparatedVec>,
     ) -> Result<Option<Vec<HeaderName>>, InvalidHeaderName> {
-        Ok(headers
+        headers
             .as_ref()
             .map(|csv| &csv.0)
             .map(|headers| {
                 headers
-                    .into_iter()
-                    .map(|h| HeaderName::from_str(&h))
+                    .iter()
+                    .map(|h| HeaderName::from_str(h))
                     .collect::<Result<_, _>>()
             })
-            .transpose()?)
+            .transpose()
     }
 
     fn allowed_methods(&self) -> Result<Option<Vec<Method>>, InvalidMethod> {
-        Ok(self
-            .allowed_methods
+        self.allowed_methods
             .as_ref()
             .map(|csv| &csv.0)
             .map(|methods| {
                 methods
-                    .into_iter()
-                    .map(|m| Method::from_str(&m))
+                    .iter()
+                    .map(|m| Method::from_str(m))
                     .collect::<Result<_, _>>()
             })
-            .transpose()?)
+            .transpose()
     }
 }
 
