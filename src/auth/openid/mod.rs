@@ -50,6 +50,7 @@ impl From<ExtendedClaims> for UserDetails {
         Self {
             user_id: claims.standard_claims.sub,
             roles,
+            scopes: None,
         }
     }
 }

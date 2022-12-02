@@ -1,5 +1,6 @@
 //! Structures to work with users and identities.
 
+use drogue_client::tokens::v1::AccessTokenScopes;
 use drogue_client::user::v1::UserDetails;
 
 /// Information about the authenticated user, may be anonymous
@@ -24,6 +25,13 @@ impl UserInformation {
         match self {
             Self::Authenticated(details) => &details.roles,
             Self::Anonymous => &EMPTY_ROLES,
+        }
+    }
+
+    pub fn token_scopes(&self) -> Option<&AccessTokenScopes> {
+        match self {
+            Self::Authenticated(details) => details.scopes.as_ref(),
+            Self::Anonymous => None,
         }
     }
 }
